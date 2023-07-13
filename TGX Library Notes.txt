@@ -1,0 +1,181 @@
+https://github.com/vindar/tgx/tree/main
+https://github.com/vindar/ILI9341_T4
+Driver:
+   Constructors:
+	ILI9341Driver(uint8_t cs, uint8_t dc, uint8_t sclk, uint8_t mosi, uint8_t miso, uint8_t rst = 255, uint8_t touch_cs = 255, uint8_t touch_irq = 255)
+	
+   Methods:
+	void output(Stream * outputStream = nullptr): For Debugging
+	bool begin(uint32_t spi_clock = ILI9341_T4_DEFAULT_SPICLOCK, uint32_t spi_clock_read = ILI9341_T4_DEFAULT_SPICLOCK_READ): Initialize screen
+	void sleep(bool enable): Enter/exit sleep mode
+	void invertDisplay(bool i): invert display colors
+	void setScroll(int offset = 0): offsets the vertical scroll, not affected by setRotation()
+	void setRotation(uint8_t r): 0-3, Portrait, Landscape, Portrait flipped. Landscape Flipped. Moves CW.
+	int width(): return screen width
+	int height(): return screen height
+	void clear(uint16_t color = 0): clears screen to single color --- default = black
+	void setRefreshRate(float refreshrate_hz): Max is around 120-140hz
+	void setVSyncSpacing(int vsync_spacing = DEFAULT_SPACING): -1->5, -1 is as fast as possible, 0 is less frames dropped, >0 prevents screen tearing by syncing updates with refresh rate. Real_framerate = screen_refresh_rate / vsync_spacing
+	
+	void setFrameBuffer(uint16_t* fb1): set/remove internal framebuffer
+	void setDiffBuffers(DiffBuffBase* diff1, DiffBuffBase* diff2): only pixels that change colors will be updated, boosts framerate, requires internal framebuffer (double buffering enabled). 
+	void setDiffGap(int gap = ILI9341_T4_DEFAULT_DIFF_GAP): Gap used when creating diffs. 4-6 for diff buffers w/ size larger than 8K, 6-10 with size btwn 4k-8k, >10 for buffers with less than 4K of memory
+	
+	void update(uint16_t* fb, bool force_full_redraw = false): push a frame buffer to be displayed. if force_full_redraw == true, then diff update is disabled for the frame.
+	void updateRegion(bool redrawNow, const uint16_t* fb, int xmin, int xmax, int ymin, int ymax, int stride = -1): updates a reigon of the screen. if redrawNow = false, changes stored internally. allows for multiple changes to the screen, and then drawing changes all at once. Convinent when using lvgl library
+
+	void overlayFPS(uint16_t* fb, int position = ILI9441_T4_DEFAULT_FPS_COUNTER_POSITION, uint16_t fg_color = ILI9441_T4_DEFAULT_FPS_COUNTER_COLOR_FG, uint16_t bg_color = ILI9441_T4_DEFAULT_FPS_COUNTER_COLOR_BG, float opacity = ILI9441_T4_DEFAULT_FPS_COUNTER_OPACITY): overlays the FPS on the screen
+
+There's also some touchscreen and more stats stuff, but we don't need that :)
+
+
+Colors:
+   Types:
+	RGB565 	(R:5, G:6, B:5, A:0) 	 [16 bit]
+	RGB24	(R:8, G:8, B:8, A:0) 	 [24 bit]
+	RGB32	(R:8, G:8, B:8, A:8) 	 [32 bit]
+	RGB64	(R:16, G:16, B:16, A:16) [64 bit]
+	RGBf	(R: float, G: Float, B: float, A:0)
+	HSV 	(DO NOT USE)
+      [565 and 32 have preset colors.]
+	
+	tgx::RGX565 col(0, 0, 0);
+	
+   Methods:
+	All operators work (+, -, *, /) For Scalar and Vector values
+	void Blend(RGB32& fg_col, float alpha): blends the given color with the alpha value (transparent or opaque)
+	void blend256(RGB32& fg_col, uint32_t alpha)
+	void mult256(int mr, int mg, int mb, int ma): Multiplies each value within the RGBA by the factors given
+	void premultiply()
+	float opacity(): Gets opacity from 0.0-1.0
+	void setOpacity(float op): sets opacity from 0.0-1.0
+	void multOpacity(float op): multiplies opacity of color by given factor: 0.0-1.0
+	RGB32 getMultOpacity(float op): Returns copy of color w/ opacity multiplied by factor: 0.0-1.0
+	void setOpaque(): sets A to opaque
+	void setTransparent(): makes it transparent.
+	RGB32 interpolateColorsTrangle(RGB32& col1, int32_t C1, RGB32& col2, int32_t C2, RGB32& col3, int32_t totC): Interpolates 3 Colors
+	RGB32 interpolateColorsBilinear(RGB32& C00, RGB32& C10, RGB32& C01, RGB32& C11, float ax, float ay): return Bilinear interpolation of 4 neighbouring pixels in image w/ respect to position x. More info in Color.h
+	RGB32 meanColor(RGB32 colA, RGB32 colB): "Mean" of 2 colors
+	RGB32 meanColor(RGB32 colA, RGB32 colB, RGB32 colC, RGB32 colD): "Mean" of 4 colors
+Image:
+   Types:
+	Image<COLOR_TYPE> image(COLOR_TYPE buffer, float lx, float ly)
+	Image<COLOR_TYPE> image(COLOR_TYPE buffer, iVec2 dim)
+	
+	Buffer is the image pixel data, should match the byte length of the color type.
+	i.e. RGB565 with uint16_t. RGB32 with uint32_t.
+   Methods:
+	void set(COLOR_TYPE buffer, int lx, int ly): Updates image parameters
+	void set(COLOR_TYPE buffer, iVec): Updates image parameters
+	void crop(iBox2& subbox): Keeps image buffer, changes dimensions to those of subbox
+	Image<color_t> getCrop(iBox2& subbox): returns the cropped image
+	
+	int width() or int lx(): returns image width.
+	int height() or int ly(): returns image height
+	iVec2 dim(): returns the image dimensions
+	iBox2 imageBox(): returns image dimensions as a box
+	color_t * data(): returns pixel buffer
+	
+	bool isValid(): returns if object is valid
+
+	void drawPixel(int x, int y, color_t color): set a pixel at a location.
+	void drawPixel(int x, int y, color_t color, float opacity): set a pixel at a location with an opacity
+	void drawPixel(iVec2 pos, color_t color): set a pixel at a location.
+	void drawPixel(iVec2 pos, color_t color, float opacity): set a pixel at a location with an opacity
+	color_t readPixel(int x, int y): read a pixel's color at a location.
+	color_t readPixel(iVec2 pos): read a pixel's color at a location.
+---------------------------------------------------------------------------------------	
+Fill the Screen
+	void fillScreen(color_t color): fills the image with a color
+	void fillScreenVGradient(color_t top_color, color_t bottom_color): fills the image with a vertical color gradient btwn color1 and color2
+	void fillScreenHGradient(color_t left_color, color_t right_color): fills the image with a horizontal color gradient btwn color1 and color2
+-----------------------------------------------------------------------------------------
+Blitting/Copying/Resizing images (moving them around).
+	void blit(Image<color_t>& sprite, iVec2 upperLeftPos): overlays sprite at given position [Have opacity version (value or lambda function) too]
+	void blit(Image<color_t>& sprite, int dest_x, int dest_y): overlays sprite at given position [Have opacity version (value or lambda function) too]
+	void blitMasked(const Image<color_t>& sprite, color_t transparent_color, iVec2 upperleftpos, float opacity): blend sprite at given position.
+	void blitMasked(const Image<color_t>& sprite, color_t transparent_color, int dest_x, int dest_y, float opacity): blend sprite at given position.
+	void blitBackward(Image<color_t> & dst_sprite, iVec2 upperleftpos): Copy part of image onto the sprite.
+	void blitBackward(Image<color_t>& dst_sprite, int dest_x, int dest_y): Copy part of image onto the sprite.
+	void blitScaledRotated(const Image<color_t_src>& src_im, fVec2 anchor_src, fVec2 anchor_dst, float scale, float angle_degrees): blends sprite at given location, can rotate and scale around a given anchor point. [Has opacity version (value or lambda)]
+	void blitScaledRotatedMasked(const Image<color_t_src>& src_im, color_t_src transparent_color, fVec2 anchor_src, fVec2 anchor_dst, float scale, float angle_degrees, float opacity): blends sprite at given location, can rotate and scale around a given anchor point. [Has opacity version (value or lambda)]. masks out a color on the sprite
+	
+	void copyFrom(const Image<src_color_t>& src_im): copies source image to destination image, resizing to match the new image size. [has opacity version with value and lambda/operator]
+
+-----------------------------------------------------------------------------------------
+Lines and Splines
+	void drawLine(iVec2 P1, iVec2 P2, color_t color): Draws line between two coords
+	void drawLine(int x0, int y0, int x1, int y1, color_t color): Draws line between two coords
+	void drawPolyLine(int nbpoints, const iVec2 tabPoints[], bool draw_last_point, color_t color): draws sequence of Lines from point to point
+	void drawPolygon(int nbpoints, const iVec2 tabPoints[], color_t color): draws polygon from point to point
+	
+	void drawQuadBezier(iVec2 P1, iVec2 P2, iVec2 PC, float wc, bool drawP2, color_t color): Draws Quad Bezier
+	void drawCubicBezier(iVec2 P1, iVec2 P2, iVec2 PA, iVec2 PB, bool drawP2, color_t color): Draws Cubic Bezier
+	void drawQuadSpline(int nbpoints, const iVec2 tabPoints[], bool draw_last_point, color_t color): Draws Quad Spline from Points
+	void drawCubicSpline(int nbpoints, const iVec2 tabPoints[], bool draw_last_point, color_t color): Draws Quad Spline from Points
+	void drawClosedSpline(int nbpoints, const iVec2 tabPoints[], color_t color): draws closed quadratic spline
+	
+------------------------------------------------------------------------------------------
+Triangle
+	void drawTriangle(int x1, int y1, int x2, int y2, int x3, int y3, color_t color): Draws a triangle outline
+	void drawTriangle(const iVec2& P1, const iVec2& P2, const iVec2& P3, color_t color): Draws a triangle outline
+	
+	void fillTriangle(int x1, int y1, int x2, int y2, int x3, int y3, color_t interior_color, color_t outline_color): Draws a filled triangle
+	void fillTriangle(const iVec2& P1, const iVec2& P2, const iVec2& P3, color_t interior_color, color_t outline_color): Draws a filled triangle
+
+---------------------------------------------------------------------------------------
+Rectangles
+	void drawRect(const iBox2 & B, color_t color)
+	void drawRect(iVec2 upper_left_pos, iVec2 dimension, color_t color)
+	void drawRect(int x, int y, int w, int h, color_t color)
+	void fillRect(iBox2 B, color_t color);
+	void fillRect(iVec2 upper_left_pos, iVec2 dimension, color_t color)
+	void fillRect(int x, int y, int w, int h, color_t color)
+	void fillRect(iBox2 B, color_t color_interior, color_t color_outline)
+	void fillRect(iVec2 upper_left_pos, iVec2 dimension, color_t color_interior, color_t color_outline)
+	void fillRect(int x, int y, int w, int h, color_t color_interior, color_t color_outline)
+
+	void drawRoundRect(const iBox2 & B, int r, color_t color)
+	void drawRoundRect(int x, int y, int w, int h, int r, color_t color)
+	void fillRoundRect(const iBox2 & B, int r, color_t color)
+	void fillRoundRect(int x, int y, int w, int h, int r, color_t color)
+
+	void fillRectHGradient(iBox2 B, color_t color1, color_t color2);
+	void fillRectHGradient(int x, int y, int w, int h, color_t color1, color_t color2)
+	void fillRectVGradient(iBox2 B, color_t color1, color_t color2)
+	void fillRectVGradient(int x, int y, int w, int h, color_t color1, color_t color2)
+-----------------------------------------------------------------------------------------
+Circles	
+	void drawCircle(iVec2 center, int r, color_t color)
+	void drawCircle(int cx, int cy, int r, color_t color)
+	void fillCircle(iVec2 center, int r, color_t interior_color, color_t outline_color)
+	void fillCircle(int cx, int cy, int r, color_t interior_color, color_t outline_color)
+
+	void drawEllipse(iVec2 center, iVec2 radiuses, color_t color)
+	void drawEllipse(int cx, int cy, int rx, int ry, color_t color)
+	void fillEllipse(iVec2 center, iVec2 radiuses, color_t interior_color, color_t outline_color)
+	void fillEllipse(int cx, int cy, int rx, int ry, color_t interior_color, color_t outline_color)
+-----------------------------------------------------------------------------------------
+New Methods
+	drawWideLine
+	drawWedgeLine
+	drawSpot
+	drawGradientTriangle
+	drawTexturedTriangle
+	drawTexturedTriangleGradient
+	drawTexturedTriangleMasked
+	drawTexturedTriangleMaskedGradient
+	drawGradientQuad
+	drawTexturedQuad
+	drawTexturedQuadGradient
+	drawTexturedQuadMasked
+	drawTexturedQuadMaskedGradient
+-----------------------------------------------------------------------------------------
+Text
+	iBox2 measureChar(const char * text, iVec2 pos, SOME_FONT_t& font, bool start_newline_at_0 = false);
+	iBox2 measureText(const char * text, iVec2 pos, SOME_FONT_t& font, bool start_newline_at_0 = false)
+	iVec2 drawChar(char c, iVec2 pos, color_t col, SOME_FONT_t font)
+	iVec2 drawText(char * text, iVec2 pos, color_t col, SOME_FONT_t font, bool start_newline_at_0)
+		Both return the next position, can use a for loop to keep on going.
+	
+	

@@ -116,6 +116,7 @@ void loop() {
   else if(CurrentMenu->IsTransitionOUTDone() && millis()-TimeTransOUTDone >= 1000){
     TimeTransOUTDone = millis();
     im.fillScreen(Transition_Color);
+    im.blitMasked(SGearFrame, RGB565_Black, iVec2(0,0), 1.0f);
     CurrentMenu->Destruct();
     CurrentMenu = NextMenu;
     NextMenu = nullptr;
@@ -123,6 +124,7 @@ void loop() {
   }
   else if(CurrentMenu->IsTransitionOUTDone() && millis()-TimeTransOUTDone < 1000){
     im.fillScreen(Transition_Color);
+    im.blitMasked(SGearFrame, RGB565_Black, iVec2(0,0), 1.0f);
   }
 
   if(CurrentMenu->MenuToTransitionTo() != nullptr){

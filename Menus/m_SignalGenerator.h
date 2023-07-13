@@ -20,6 +20,7 @@ class m_SignalGenerator : public Menu {
         uint16_t text_box[300 * 56];
         uint16_t transition_in[2*2];
         uint16_t transition_out[2*2];
+        uint16_t transition_out2[240*320];
 
         Image<RGB565> SampleMenuItem;
         Image<RGB565> SampleAltItem;
@@ -28,6 +29,7 @@ class m_SignalGenerator : public Menu {
         Image<RGB565> TextBox;
         Image<RGB565> TransitionIn;
         Image<RGB565> TransitionOut;
+        Image<RGB565> TransitionOut2;
         
         void createSampleMenuItem(RGB565 outerColor, RGB565 innerColor){
             SampleMenuItem.fillScreen(outerColor);
@@ -67,7 +69,6 @@ class m_SignalGenerator : public Menu {
             iVec2 pos(middlePos.x - textAncPos.x, middlePos.y + textAncPos.y);
             tgtImg.drawText(chars, pos, col, font, false, opacity);
         }
-
         void createTextBox(String text, int strokeWidth, RGB565 innerColor, RGB565 outerColor, RGB565 textColor, const ILI9341_t3_font_t& font){
             TextBox.fillScreen(outerColor);
             TextBox.fillRect(strokeWidth, strokeWidth, TextBox.lx() - (2*strokeWidth), TextBox.ly() - (2*strokeWidth), innerColor);
@@ -104,8 +105,11 @@ class m_SignalGenerator : public Menu {
         uint TransitionButton = 0;
 
         double TransitionScale = 200;
+        double TransitionRotation = 0;
         const int TRANSITION_MIN = 1;
         const int TRANSITION_MAX = 200;
+        const int TRANSITION_MAX2 = 2.5;
+        const int TRANSITION_ROT_MAX = 90;
         const double TRANSITION_RATE = 1.20;
 
         Menu* TransitionMenu1;
@@ -124,6 +128,7 @@ class m_SignalGenerator : public Menu {
             TextBox = Image<RGB565>(text_box, 300, 56);
             TransitionIn = Image<RGB565>(transition_in, 2, 2);
             TransitionOut = Image<RGB565>(transition_out, 2, 2);
+            TransitionOut2 = Image<RGB565>(transition_out2, 320, 240);
 
             Item1.bottomText = Item1Text;
             Item2.bottomText = Item2Text;
@@ -234,7 +239,10 @@ class m_SignalGenerator : public Menu {
                     TransitionOUTFlag = true;
                     //Serial.println(TransitionButton);
                     if(TransitionButton == 0b100)       TransitioningMenu = TransitionMenu1;
-                    else if (TransitionButton == 0b010) TransitioningMenu = TransitionMenu2;
+                    else if (TransitionButton == 0b010) {
+                        TransitioningMenu = TransitionMenu2;
+                        mainImage->blitBackward(TransitionOut2, iVec2(0,0));
+                    }
                     else if (TransitionButton == 0b001) TransitioningMenu = TransitionMenu3;
                 
                 }
@@ -248,17 +256,23 @@ class m_SignalGenerator : public Menu {
                         mainImage->blitScaledRotated(TransitionOut, fVec2(TransitionOut.width()/2, TransitionOut.height()/2), fVec2(Item1.pos.x, Item1.pos.y), TransitionScale, 45);
                         TransitionScale *= TRANSITION_RATE;
                 } else if (TransitionButton >> 1) {
-                        mainImage->blitScaledRotated(TransitionOut, fVec2(TransitionOut.width()/2, TransitionOut.height()/2), fVec2(Item2.pos.x, Item2.pos.y), TransitionScale, 45);
-                        TransitionScale *= TRANSITION_RATE;
+                    //TODO: MAKE THIS A COOL TRANSITION :)
+                        TransitionScale += 0.005;
+                        if(TransitionScale > TRANSITION_MAX2) TransitionScale = TRANSITION_MAX2;
+                        TransitionRotation += 0.5;
+                        mainImage->blitScaledRotated(TransitionOut2, fVec2(Item2.pos.x, Item2.pos.y), fVec2(Item2.pos.x, Item2.pos.y), TransitionScale, TransitionRotation);
                 } else if (TransitionButton) {
                         mainImage->blitScaledRotated(TransitionOut, fVec2(TransitionOut.width()/2, TransitionOut.height()/2), fVec2(Item3.pos.x, Item3.pos.y), TransitionScale, 45);
                         TransitionScale *= TRANSITION_RATE;
                 }
                 //Serial.println("Scale: " + TransitionScale);
-                if(TransitionScale > TRANSITION_MAX) {
+                if((TransitionButton & 0b001 || TransitionButton >> 2) && TransitionScale > TRANSITION_MAX) {
                     mainImage->fillScreen(TransitionColor());
                     TransitionOUTFlag = false;
                     TransitionOUTDone = true;
+                }
+                else if(TransitionScale == TRANSITION_MAX2 && TransitionRotation == TRANSITION_ROT_MAX){
+                    TransitionOUTFlag = false;
                 }
             }
         }

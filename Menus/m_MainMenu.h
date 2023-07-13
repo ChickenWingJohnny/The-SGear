@@ -85,14 +85,14 @@ class m_MainMenu : public Menu {
         RGB32 col2;
         RGB32 col3;
 
-        bool TransitionINDone = false;
-        bool TransitionOUTFlag = false;
-        bool TransitionOUTDone = false;
+        bool transitionINFlag = true;
+        bool transitionOUTFlag = false;
+        bool transitionOUTDone = false;
         uint TransitionButton = 0;
 
-        double TransitionScale = 200;
+        double TransitionScale = 700;
         const int TRANSITION_MIN = 1;
-        const int TRANSITION_MAX = 200;
+        const int TRANSITION_MAX = 700;
         const double TRANSITION_RATE = 1.20;
 
         Menu* TransitionMenu1;
@@ -153,6 +153,8 @@ class m_MainMenu : public Menu {
         }
 
         void Setup(){
+            Serial.println("Setup m_MainMenu");
+
             createTransitionIn(col1);
             createTransitionOut(TransitionColor());
 
@@ -161,6 +163,8 @@ class m_MainMenu : public Menu {
             createTextBox("MAIN MENU", 4, col2, col1, RGB565_White, font_Roboto_Bold_32);
         }
         void Setup(RGB565 TransitionINColor){ 
+            Serial.println("Setup m_MainMenu");
+
             createTransitionIn(TransitionINColor);
             createTransitionOut(TransitionColor());
 
@@ -168,22 +172,45 @@ class m_MainMenu : public Menu {
             createSampleAltItem(col2, col1);
             createTextBox("MAIN MENU", 4, col2, col1, RGB565_White, font_Roboto_Bold_32);
         }
-        
+
+        //Transition IN should ONLY be Drawn if transitionINFlag is True.
+        bool TransitionINFlag(){
+            return transitionINFlag;
+        }
         void TransitionIN(){
-            if(!TransitionINDone){
-                mainImage->blitScaledRotated(TransitionIn, fVec2(TransitionOut.width()/2, TransitionOut.height()/2), fVec2(mainImage->width()/2, mainImage->height()/2), TransitionScale, 45);
-                TransitionScale /= TRANSITION_RATE;
-                if(TransitionScale <= TRANSITION_MIN) {
-                    TransitionINDone = true;
-                }
+            Draw();
+            mainImage->blitScaledRotated(TransitionIn, fVec2(TransitionOut.width()/2, TransitionOut.height()/2), fVec2(mainImage->width()/2, mainImage->height()/2), TransitionScale, 45);
+            TransitionScale /= TRANSITION_RATE;
+            if(TransitionScale <= TRANSITION_MIN) {
+                transitionINFlag = false;
             }
         }
 
-        bool IsTransitionINDone(){
-            return TransitionINDone;
-        }
-
         //The Main Menu Loop.
+        void Draw(){
+            Item1.pos.y = 145 + (5 * sin(0.5 * PI * millis() / 1000.0));
+            Item2.pos.y = 145 + (5 * sin(0.25*PI + (0.5 * PI * millis() / 1000.0)));
+            Item3.pos.y = 145 + (5 * sin(0.5*PI + (0.5 * PI * millis() / 1000.0)));
+
+            mainImage->fillScreenVGradient(RGB565_Black, col3);
+
+            //Menu Items
+            mainImage->blitScaledRotated(Item1.image, fVec2(Item1.size.x/2, Item1.size.y/2), fVec2(Item1.pos.x, Item1.pos.y), Item1Scale, Item1Rotation);
+            mainImage->blitScaledRotated(Item2.image, fVec2(Item2.size.x/2, Item2.size.y/2), fVec2(Item2.pos.x, Item2.pos.y), Item2Scale, Item2Rotation);
+            mainImage->blitScaledRotated(Item3.image, fVec2(Item3.size.x/2, Item3.size.y/2), fVec2(Item3.pos.x, Item3.pos.y), Item3Scale, Item3Rotation);
+
+            //Menu Text
+            placeText(*mainImage, Item1.topText, iVec2(Item1.pos.x, Item1.pos.y - 54), RGB565_White, font_Roboto_Bold_14, 1.0);
+            placeText(*mainImage, Item1.bottomText, iVec2(Item1.pos.x, Item1.pos.y + 54), RGB565_White, font_Roboto_Bold_14, 1.0);
+            placeText(*mainImage, Item2.topText, iVec2(Item2.pos.x, Item2.pos.y - 54), RGB565_White, font_Roboto_Bold_14, 1.0);
+            placeText(*mainImage, Item2.bottomText, iVec2(Item2.pos.x, Item2.pos.y + 54), RGB565_White, font_Roboto_Bold_14, 1.0);
+            placeText(*mainImage, Item3.topText, iVec2(Item3.pos.x, Item3.pos.y - 54), RGB565_White, font_Roboto_Bold_14, 1.0);
+            placeText(*mainImage, Item3.bottomText, iVec2(Item3.pos.x, Item3.pos.y + 54), RGB565_White, font_Roboto_Bold_14, 1.0);
+
+            //Title
+            mainImage->blitScaledRotated(TextBox, fVec2(TextBox.width()/2, TextBox.height()/2), fVec2(160, 36), 1, 0);
+        }
+        //Main Menu Loop with Button Presses.
         void Draw(  bool B1Pressed, bool B2Pressed, bool B3Pressed, 
                     bool B1IsJustReleased, bool B2IsJustReleased, bool B3IsJustReleased,
                     int Dial1, int Dial2, int Dial3
@@ -216,47 +243,56 @@ class m_MainMenu : public Menu {
             mainImage->blitScaledRotated(TextBox, fVec2(TextBox.width()/2, TextBox.height()/2), fVec2(160, 36), 1, 0);
 
             //Bitshifted bools to make it easier :)
-            //Could move Transition out here???
             if(TransitionButton == 0 && TransitioningMenu == nullptr) {
                 TransitionButton = B1IsJustReleased << 2 | B2IsJustReleased << 1 | B3IsJustReleased;
                 if(TransitionButton != 0) {
-                    TransitionOUTFlag = true;
+                    transitionOUTFlag = true;
                     //Serial.println(TransitionButton);
-                    if(TransitionButton == 0b100)       TransitioningMenu = TransitionMenu1;
-                    else if (TransitionButton == 0b010) TransitioningMenu = TransitionMenu2;
-                    else if (TransitionButton == 0b001) TransitioningMenu = TransitionMenu3;
-                
+                    if(TransitionButton == 0b100){
+                        Serial.println("Button 1 Released... Activating Transition for Button 1");
+                        TransitioningMenu = TransitionMenu1;
+                    }
+                    else if (TransitionButton == 0b010){
+                        Serial.println("Button 2 Released... Activating Transition for Button 2");
+                        TransitioningMenu = TransitionMenu2;
+                    }
+                    else if (TransitionButton == 0b001){
+                        Serial.println("Button 3 Released... Activating Transition for Button 3");
+                        TransitioningMenu = TransitionMenu3;
+                    }
                 }
             }
         }
 
+        //Transition should ONLY be Drawn if transitionINFlag is True.
+        bool TransitionOUTFlag(){
+            return transitionOUTFlag;
+        }
+        bool TransitionOUTDone(){
+            return transitionOUTDone;
+        }
         void TransitionOUT(){
-            //Serial.println("Flag: " + TransitionOUTFlag && !TransitionOUTDone);
-            if(TransitionOUTFlag && !TransitionOUTDone){
-                if(TransitionButton >> 2 ){
-                        mainImage->blitScaledRotated(TransitionOut, fVec2(TransitionOut.width()/2, TransitionOut.height()/2), fVec2(Item1.pos.x, Item1.pos.y), TransitionScale, 45);
-                        TransitionScale *= TRANSITION_RATE;
+            if(TransitionScale > TRANSITION_MAX) {
+                mainImage->fillScreen(TransitionColor());
+                transitionOUTDone = true;
+            }
+            if(!transitionOUTDone){
+                if(TransitionButton >> 2){
+                    Draw();
+                    mainImage->blitScaledRotated(TransitionOut, fVec2(TransitionOut.width()/2, TransitionOut.height()/2), fVec2(Item1.pos.x, Item1.pos.y), TransitionScale, 45);
+                    TransitionScale *= TRANSITION_RATE;
                 } else if (TransitionButton >> 1) {
-                        mainImage->blitScaledRotated(TransitionOut, fVec2(TransitionOut.width()/2, TransitionOut.height()/2), fVec2(Item2.pos.x, Item2.pos.y), TransitionScale, 45);
-                        TransitionScale *= TRANSITION_RATE;
+                    Draw();
+                    mainImage->blitScaledRotated(TransitionOut, fVec2(TransitionOut.width()/2, TransitionOut.height()/2), fVec2(Item2.pos.x, Item2.pos.y), TransitionScale, 45);
+                    TransitionScale *= TRANSITION_RATE;
                 } else if (TransitionButton) {
-                        mainImage->blitScaledRotated(TransitionOut, fVec2(TransitionOut.width()/2, TransitionOut.height()/2), fVec2(Item3.pos.x, Item3.pos.y), TransitionScale, 45);
-                        TransitionScale *= TRANSITION_RATE;
-                }
-                //Serial.println("Scale: " + TransitionScale);
-                if(TransitionScale > TRANSITION_MAX) {
-                    mainImage->fillScreen(TransitionColor());
-                    TransitionOUTFlag = false;
-                    TransitionOUTDone = true;
+                    Draw();
+                    mainImage->blitScaledRotated(TransitionOut, fVec2(TransitionOut.width()/2, TransitionOut.height()/2), fVec2(Item3.pos.x, Item3.pos.y), TransitionScale, 45);
+                    TransitionScale *= TRANSITION_RATE;
                 }
             }
         }
-        bool IsTransitioningOUT(){
-            return TransitionOUTFlag;
-        }
-        bool IsTransitionOUTDone(){
-            return TransitionOUTDone;
-        }
+
         RGB565 TransitionColor(){
             return col1;
         }
@@ -266,6 +302,8 @@ class m_MainMenu : public Menu {
         }
 
         void Destruct(){
+            Serial.println("Destroying m_MainMenu");
+
             // free(mainImage);
 
             // free(item);
@@ -278,9 +316,9 @@ class m_MainMenu : public Menu {
             // free(TransitionIn);
             // free(TransitionOut);
 
-            TransitionINDone = false;
-            TransitionOUTFlag = false;
-            TransitionOUTDone = false;
+            transitionINFlag = true;
+            transitionOUTFlag = false;
+            transitionOUTDone = false;
             TransitionButton = 0;
             TransitioningMenu = nullptr;
         }

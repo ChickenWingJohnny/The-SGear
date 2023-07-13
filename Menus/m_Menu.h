@@ -21,8 +21,8 @@ class Menu {
         //After the previous menu is destroyed, and the current menu is setup, transition in is called every
         //frame until it is done. Will implicitly stop drawing if it is done Transitioning in.
         virtual void TransitionIN();
-        //The flag for if the TransitionIN is done.
-        virtual bool IsTransitionINDone();
+        //The flag for if the TransitionIN should Happen.
+        virtual bool TransitionINFlag();
 
         //Draws the static of the menu. Controls the inputs of the menu as well.
         //Pressed parameters should be whether the button is down or up.
@@ -37,10 +37,10 @@ class Menu {
         //Once the "Back button" is Pressed then released, TransitionOUT will be called every frame until it's done.
         //Will implicitly stop drawing if it is done Transitioning out.
         virtual void TransitionOUT();
-        //The flag for if the TransitionOUT is ready to happen.
-        virtual bool IsTransitioningOUT();
+        //The flag for if the TransitionOUT should happen.
+        virtual bool TransitionOUTFlag();
         //The flag for if the TransitionOUT is done.
-        virtual bool IsTransitionOUTDone();
+        virtual bool TransitionOUTDone();
         //The Transition OUT color of the current menu INTO the next menu.
         //Should be stored temporarily, and then discarded once setup is called with this.
         virtual RGB565 TransitionColor();

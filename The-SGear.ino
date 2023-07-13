@@ -75,14 +75,21 @@ int TimeTransOUTDone;
 
 
 void setup() {
+  Serial.println("Beginning Setup.");
+
+  Serial.println("Linking Menus...");
   MainMenu.Link(&SignalGenerator, &MainMenu, &MainMenu);
   SignalGenerator.Link(&MainMenu, &SignalGenerator, &SignalGenerator);
-  // put your setup code here, to run once:
+  Serial.println("Menus Linked!");
+
+  Serial.println("Setting up Screen...");
   setUpScreen();
+  Serial.println("Screen Set up!");
 
   // clear display black
   im.fillScreen(RGB565_Black);
   
+  Serial.println("Attaching and Activating Buttons...");
   b1.attach(BUTTON1, INPUT);
   b2.attach(BUTTON2, INPUT);
   b3.attach(BUTTON3, INPUT);
@@ -90,47 +97,65 @@ void setup() {
   b1.interval(BUTTON_DEBOUNCE_SPEED);
   b2.interval(BUTTON_DEBOUNCE_SPEED);
   b3.interval(BUTTON_DEBOUNCE_SPEED);
+  Serial.println("Buttons Created!");
   
+  Serial.println("initializing Current Menu...");
   CurrentMenu = &MainMenu;
   CurrentMenu->Setup();
   TimeTransOUTDone = millis();
   Transition_Color = CurrentMenu->TransitionColor();
+
+  Serial.println("Done!!");
+  Serial.println("Beginnning Main Loop.");
 }
 
 void loop() {
   //Update the input value of the buttons.
   updateButtons();
 
-  //If there is no transition or it's not done Transing Out., render the main scene
-  if(!CurrentMenu->IsTransitionOUTDone() && millis()-TimeTransOUTDone >= 1000){
-    //im.blit(bg, iVec2(0, 10 -(millis() / 30)%15));
+  // Serial.println("In Flag" + CurrentMenu->TransitionINFlag());
+  // Serial.println("Out Flag" + CurrentMenu->TransitionOUTFlag());
+  // Serial.println("Out Done" + CurrentMenu->TransitionOUTDone());
+  if(millis()-TimeTransOUTDone < 1000){
+    //If you want a loading screen, have it here :)
+  }
+  //IF TransIN, then render TransIN.
+  else if(CurrentMenu->TransitionINFlag()){
+    CurrentMenu->TransitionIN();
+    //im.blitMasked(SGearFrame, RGB565_Black, iVec2(0,0), 1.0f);
+  }
+  //If TransOUT, then render TransOUT
+  else if(CurrentMenu->TransitionOUTFlag()){
+    //If the Time Transitioning out == 1000, reset everything.
+    CurrentMenu->TransitionOUT();
+    //im.blitMasked(SGearFrame, RGB565_Black, iVec2(0,0), 1.0f);
+  }
+  //Neither? Then draw with inputs.
+  else if(!CurrentMenu->TransitionINFlag() && !CurrentMenu->TransitionOUTFlag()){
     CurrentMenu->Draw(
       !b1.read(), !b2.read(), !b3.read(),
       b1.rose(), b2.rose(), b3.rose(),
       -1, -1, -1
     );
-    im.blitMasked(SGearFrame, RGB565_Black, iVec2(0,0), 1.0f);
-    CurrentMenu->TransitionIN();
-    CurrentMenu->TransitionOUT();
-  }
-  else if(CurrentMenu->IsTransitionOUTDone() && millis()-TimeTransOUTDone >= 1000){
-    TimeTransOUTDone = millis();
-    im.fillScreen(Transition_Color);
-    im.blitMasked(SGearFrame, RGB565_Black, iVec2(0,0), 1.0f);
-    CurrentMenu->Destruct();
-    CurrentMenu = NextMenu;
-    NextMenu = nullptr;
-    CurrentMenu->Setup(Transition_Color);
-  }
-  else if(CurrentMenu->IsTransitionOUTDone() && millis()-TimeTransOUTDone < 1000){
-    im.fillScreen(Transition_Color);
-    im.blitMasked(SGearFrame, RGB565_Black, iVec2(0,0), 1.0f);
+    //im.blit(bg, iVec2(0, 10 -(millis() / 30)%15));
+    //im.blitMasked(SGearFrame, RGB565_Black, iVec2(0,0), 1.0f);
   }
 
-  if(CurrentMenu->MenuToTransitionTo() != nullptr){
-    NextMenu = CurrentMenu->MenuToTransitionTo();
-    Transition_Color = CurrentMenu->TransitionColor();
+  //If The transition Out is done, then set up the next menu.
+  if(CurrentMenu->TransitionOUTDone() && millis()-TimeTransOUTDone > 1000){
+      TimeTransOUTDone = millis();
+
+      if(CurrentMenu->MenuToTransitionTo() != nullptr){
+        NextMenu = CurrentMenu->MenuToTransitionTo();
+        Transition_Color = CurrentMenu->TransitionColor();
+      }
+
+      CurrentMenu->Destruct();
+      CurrentMenu = NextMenu;
+      NextMenu = nullptr;
+      CurrentMenu->Setup(Transition_Color);
   }
+
   //Overlay the FPS and Update the screen
   tft.overlayFPS(fb, 0, 0xFFFF, 0, 0.3f); 
   tft.update(fb, false);

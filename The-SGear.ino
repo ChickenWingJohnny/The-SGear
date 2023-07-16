@@ -29,7 +29,7 @@
 #define PIN_TOUCH_CS    255       // optional. set this only if the touchscreen is connected on the same spi bus
 #define SPI_SPEED       40000000  // SPI speed
 
-#define MIDISerial      Serial1
+#define MIDISerial      Serial8
 
 #define BUTTON1         30
 #define BUTTON2         31
@@ -138,13 +138,57 @@ void setup() {
 }
 
 void loop() {
-  //Update the input value of the MIDI, BUTTONS, and DIALS
-  MIDI.read(); //The MIDI handles will be taking care of updating everything.
+  //Update the MIDI, SYNTH, BUTTONS, DIALS, and SCREEN
+  bool readVal = MIDI.read();
+  while(readVal){
+    //The MIDI handles will be taking care of updating everything.
+    readVal = MIDI.read();
+  }
+  Synth.Play();
   updateButtons();
   updateDials();
 
+  readVal = MIDI.read();
+  while(readVal){
+    //The MIDI handles will be taking care of updating everything.
+    readVal = MIDI.read();
+  }
   Synth.Play();
 
+  updateScreen();
+}
+
+void setUpScreen(){
+  while (!tft.begin(SPI_SPEED));
+
+  tft.setScroll(0);
+  tft.setRotation(1);                  // Rotation is the screen rotation: Rotates CW
+  tft.setFramebuffer(ib);              // set 1 internal framebuffer -> activate float buffering
+  tft.setDiffBuffers(&diff1, &diff2);  // set the 2 diff buffers => activate differential updates 
+  tft.setDiffGap(4);                   // use a small gap for the diff buffers
+  tft.setRefreshRate(120);             // around 120hz for the display refresh rate 
+  tft.setVSyncSpacing(1);              // set framerate = refreshrate/2 (and enable vsync at the same time) 
+
+  // make sure backlight is on
+  if (PIN_BACKLIGHT != 255) {
+      pinMode(PIN_BACKLIGHT, OUTPUT);
+      digitalWrite(PIN_BACKLIGHT, HIGH);
+  }
+}
+
+void updateButtons(){
+  b1.update();
+  b2.update();
+  b3.update();
+}
+
+void updateDials(){
+  Dial1Value = analogRead(DIAL1);
+  Dial2Value = analogRead(DIAL2);
+  Dial3Value = analogRead(DIAL3);
+}
+
+void updateScreen(){
   // Serial.println("In Flag" + CurrentMenu->TransitionINFlag());
   // Serial.println("Out Flag" + CurrentMenu->TransitionOUTFlag());
   // Serial.println("Out Done" + CurrentMenu->TransitionOUTDone());
@@ -193,45 +237,20 @@ void loop() {
   tft.update(fb, false);
 }
 
-void setUpScreen(){
-  while (!tft.begin(SPI_SPEED));
-
-  tft.setScroll(0);
-  tft.setRotation(1);                  // Rotation is the screen rotation: Rotates CW
-  tft.setFramebuffer(ib);              // set 1 internal framebuffer -> activate float buffering
-  tft.setDiffBuffers(&diff1, &diff2);  // set the 2 diff buffers => activate differential updates 
-  tft.setDiffGap(4);                   // use a small gap for the diff buffers
-  tft.setRefreshRate(120);             // around 120hz for the display refresh rate 
-  tft.setVSyncSpacing(1);              // set framerate = refreshrate/2 (and enable vsync at the same time) 
-
-  // make sure backlight is on
-  if (PIN_BACKLIGHT != 255) {
-      pinMode(PIN_BACKLIGHT, OUTPUT);
-      digitalWrite(PIN_BACKLIGHT, HIGH);
-  }
-}
-
-void updateButtons(){
-  b1.update();
-  b2.update();
-  b3.update();
-}
-
-void updateDials(){
-  Dial1Value = analogRead(DIAL1);
-  Dial2Value = analogRead(DIAL2);
-  Dial3Value = analogRead(DIAL3);
-}
-
 void MIDI_NoteOn(byte channel, byte pitch, byte velocity){
-  Serial.println(pitch);
+  // Serial.print("Added ");
+  // Serial.println(pitch);
   if(21 <= pitch && pitch <= 108) Synth.AddNote(pitch);
 }
 void MIDI_NoteOff(byte channel, byte pitch, byte velocity){
+  // Serial.print("Removed ");
+  // Serial.println(pitch);
   if(21 <= pitch && pitch <= 108) Synth.RemoveNote(pitch);
 }
 void MIDI_PitchBend(byte channel, int bend){
-
+  Serial.print("Bend ");
+  Serial.println(bend);
+  Synth.bend = bend;
 }
 void MIDI_ControlChange(byte channel, byte control, byte value){
 

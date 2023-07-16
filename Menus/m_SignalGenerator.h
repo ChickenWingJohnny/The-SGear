@@ -75,6 +75,28 @@ class m_SignalGenerator : public Menu {
             placeText(TextBox, text, iVec2(TextBox.lx()/2, TextBox.ly()/2), textColor, font, 1.0);
         }
 
+        //The Main Menu Loop Without Inputs
+        void Draw(){
+            Item1.pos.y = 135 + (5 * sin(0.5 * PI * millis() / 1000.0));
+            Item2.pos.y = 135 + (5 * sin(0.25*PI + (0.5 * PI * millis() / 1000.0)));
+            Item3.pos.y = 135 + (5 * sin(0.5*PI + (0.5 * PI * millis() / 1000.0)));
+
+            mainImage->fillScreenVGradient(RGB565_Black, col3);
+
+            //Menu Items
+            mainImage->blitScaledRotated(Item1.image, fVec2(Item1.size.x/2, Item1.size.y/2), fVec2(Item1.pos.x, Item1.pos.y), Item1Scale, Item1Rotation);
+            mainImage->blitScaledRotatedMasked(Item2.image, RGB565_Black, fVec2(Item2.size.x/2, Item2.size.y/2), fVec2(Item2.pos.x, Item2.pos.y), Item2Scale, Item2Rotation, 1.0);
+            mainImage->blitScaledRotated(Item3.image, fVec2(Item3.size.x/2, Item3.size.y/2), fVec2(Item3.pos.x, Item3.pos.y), Item3Scale, Item3Rotation);
+
+            //Menu Text
+            placeText(*mainImage, Item1.bottomText, iVec2(Item1.pos.x, Item1.pos.y + 54), RGB565_White, font_Roboto_Bold_14, 1.0);
+            placeText(*mainImage, Item2.bottomText, iVec2(Item2.pos.x, Item2.pos.y + 72), RGB565_White, font_Roboto_Bold_14, 1.0);
+            placeText(*mainImage, Item3.bottomText, iVec2(Item3.pos.x, Item3.pos.y + 54), RGB565_White, font_Roboto_Bold_14, 1.0);
+
+            //Title
+            mainImage->blitScaledRotated(TextBox, fVec2(TextBox.width()/2, TextBox.height()/2), fVec2(160, 36), 1, 0);
+        }
+
         String Item1Text = "MODULATION";
         String Item2Text = "OSCILATORS";
         String Item3Text = "FILTERS";
@@ -204,27 +226,6 @@ class m_SignalGenerator : public Menu {
             }
         }
 
-        //The Main Menu Loop
-        void Draw(){
-            Item1.pos.y = 135 + (5 * sin(0.5 * PI * millis() / 1000.0));
-            Item2.pos.y = 135 + (5 * sin(0.25*PI + (0.5 * PI * millis() / 1000.0)));
-            Item3.pos.y = 135 + (5 * sin(0.5*PI + (0.5 * PI * millis() / 1000.0)));
-
-            mainImage->fillScreenVGradient(RGB565_Black, col3);
-
-            //Menu Items
-            mainImage->blitScaledRotated(Item1.image, fVec2(Item1.size.x/2, Item1.size.y/2), fVec2(Item1.pos.x, Item1.pos.y), Item1Scale, Item1Rotation);
-            mainImage->blitScaledRotatedMasked(Item2.image, RGB565_Black, fVec2(Item2.size.x/2, Item2.size.y/2), fVec2(Item2.pos.x, Item2.pos.y), Item2Scale, Item2Rotation, 1.0);
-            mainImage->blitScaledRotated(Item3.image, fVec2(Item3.size.x/2, Item3.size.y/2), fVec2(Item3.pos.x, Item3.pos.y), Item3Scale, Item3Rotation);
-
-            //Menu Text
-            placeText(*mainImage, Item1.bottomText, iVec2(Item1.pos.x, Item1.pos.y + 54), RGB565_White, font_Roboto_Bold_14, 1.0);
-            placeText(*mainImage, Item2.bottomText, iVec2(Item2.pos.x, Item2.pos.y + 72), RGB565_White, font_Roboto_Bold_14, 1.0);
-            placeText(*mainImage, Item3.bottomText, iVec2(Item3.pos.x, Item3.pos.y + 54), RGB565_White, font_Roboto_Bold_14, 1.0);
-
-            //Title
-            mainImage->blitScaledRotated(TextBox, fVec2(TextBox.width()/2, TextBox.height()/2), fVec2(160, 36), 1, 0);
-        }
         //Main Menu Loop with Inputs.
         void Draw(  bool B1Pressed, bool B2Pressed, bool B3Pressed, 
                     bool B1IsJustReleased, bool B2IsJustReleased, bool B3IsJustReleased,
@@ -285,18 +286,24 @@ class m_SignalGenerator : public Menu {
         }
         void TransitionOUT(){
             //Serial.println("Scale: " + TransitionScale);
-            if((TransitionButton & 0b001 || TransitionButton >> 2)) {
-                if(TransitionScale > TRANSITION_MAX){
-                    mainImage->fillScreen(TransitionColor());
-                    Serial.println("Transition to ... Done.");
-                    transitionOUTDone = true;
-                }
-            }
-            else if(TransitionButton >> 1){
-                if(TransitionScale == TRANSITION_MAX2 && TransitionRotation == TRANSITION_ROT_MAX){
-                    Serial.println("Transition to Oscilators Done.");
-                    transitionOUTDone = true;
-                }
+            // if((TransitionButton & 0b001 || TransitionButton >> 2)) {
+            //     if(TransitionScale > TRANSITION_MAX){
+            //         mainImage->fillScreen(TransitionColor());
+            //         Serial.println("Transition to ... Done.");
+            //         transitionOUTDone = true;
+            //     }
+            // }
+            // else if(TransitionButton >> 1){
+            //     if(TransitionScale == TRANSITION_MAX2 && TransitionRotation == TRANSITION_ROT_MAX){
+            //         Serial.println("Transition to Oscilators Done.");
+            //         transitionOUTDone = true;
+            //     }
+            // }
+
+            if(TransitionScale > TRANSITION_MAX){
+                mainImage->fillScreen(TransitionColor());
+                Serial.println("Transition to ... Done.");
+                transitionOUTDone = true;
             }
 
             if(!transitionOUTDone){
@@ -306,10 +313,14 @@ class m_SignalGenerator : public Menu {
                     TransitionScale *= TRANSITION_RATE;
                 } else if (TransitionButton >> 1) {
                     //TODO: MAKE THIS A COOL TRANSITION :)
-                    TransitionScale += 0.5;
-                    TransitionRotation += 1;
-                    if(TransitionScale > TRANSITION_MAX2) TransitionScale = TRANSITION_MAX2;
-                    if(TransitionRotation > TRANSITION_ROT_MAX) TransitionRotation = TRANSITION_ROT_MAX;
+                    // TransitionScale += 0.5;
+                    // TransitionRotation += 1;
+                    // if(TransitionScale > TRANSITION_MAX2) TransitionScale = TRANSITION_MAX2;
+                    // if(TransitionRotation > TRANSITION_ROT_MAX) TransitionRotation = TRANSITION_ROT_MAX;
+                    
+                    Draw();
+                    mainImage->blitScaledRotated(TransitionOut, fVec2(TransitionOut.width()/2, TransitionOut.height()/2), fVec2(Item1.pos.x, Item1.pos.y), TransitionScale, 45);
+                    TransitionScale *= TRANSITION_RATE;
 
                     mainImage->blitScaledRotated(TransitionOut2, fVec2(Item2.pos.x, Item2.pos.y), fVec2(Item2.pos.x, Item2.pos.y), TransitionScale, TransitionRotation);
                 } else if (TransitionButton) {

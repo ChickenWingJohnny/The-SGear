@@ -58,6 +58,31 @@ class m_MainMenu : public Menu {
             placeText(TextBox, text, iVec2(TextBox.lx()/2, TextBox.ly()/2), textColor, font, 1.0);
         }
 
+        //The Main Menu Loop Without Inputs
+        void Draw(){
+            Item1.pos.y = 145 + (5 * sin(0.5 * PI * millis() / 1000.0));
+            Item2.pos.y = 145 + (5 * sin(0.25*PI + (0.5 * PI * millis() / 1000.0)));
+            Item3.pos.y = 145 + (5 * sin(0.5*PI + (0.5 * PI * millis() / 1000.0)));
+
+            mainImage->fillScreenVGradient(RGB565_Black, col3);
+
+            //Menu Items
+            mainImage->blitScaledRotated(Item1.image, fVec2(Item1.size.x/2, Item1.size.y/2), fVec2(Item1.pos.x, Item1.pos.y), Item1Scale, Item1Rotation);
+            mainImage->blitScaledRotated(Item2.image, fVec2(Item2.size.x/2, Item2.size.y/2), fVec2(Item2.pos.x, Item2.pos.y), Item2Scale, Item2Rotation);
+            mainImage->blitScaledRotated(Item3.image, fVec2(Item3.size.x/2, Item3.size.y/2), fVec2(Item3.pos.x, Item3.pos.y), Item3Scale, Item3Rotation);
+
+            //Menu Text
+            placeText(*mainImage, Item1.topText, iVec2(Item1.pos.x, Item1.pos.y - 54), RGB565_White, font_Roboto_Bold_14, 1.0);
+            placeText(*mainImage, Item1.bottomText, iVec2(Item1.pos.x, Item1.pos.y + 54), RGB565_White, font_Roboto_Bold_14, 1.0);
+            placeText(*mainImage, Item2.topText, iVec2(Item2.pos.x, Item2.pos.y - 54), RGB565_White, font_Roboto_Bold_14, 1.0);
+            placeText(*mainImage, Item2.bottomText, iVec2(Item2.pos.x, Item2.pos.y + 54), RGB565_White, font_Roboto_Bold_14, 1.0);
+            placeText(*mainImage, Item3.topText, iVec2(Item3.pos.x, Item3.pos.y - 54), RGB565_White, font_Roboto_Bold_14, 1.0);
+            placeText(*mainImage, Item3.bottomText, iVec2(Item3.pos.x, Item3.pos.y + 54), RGB565_White, font_Roboto_Bold_14, 1.0);
+
+            //Title
+            mainImage->blitScaledRotated(TextBox, fVec2(TextBox.width()/2, TextBox.height()/2), fVec2(160, 36), 1, 0);
+        }
+
         String Item1TopText = "SIGNAL";
         String Item1BottomText = "GENERATOR";
         String Item2TopText = "VOLUME";
@@ -186,30 +211,6 @@ class m_MainMenu : public Menu {
             }
         }
 
-        //The Main Menu Loop.
-        void Draw(){
-            Item1.pos.y = 145 + (5 * sin(0.5 * PI * millis() / 1000.0));
-            Item2.pos.y = 145 + (5 * sin(0.25*PI + (0.5 * PI * millis() / 1000.0)));
-            Item3.pos.y = 145 + (5 * sin(0.5*PI + (0.5 * PI * millis() / 1000.0)));
-
-            mainImage->fillScreenVGradient(RGB565_Black, col3);
-
-            //Menu Items
-            mainImage->blitScaledRotated(Item1.image, fVec2(Item1.size.x/2, Item1.size.y/2), fVec2(Item1.pos.x, Item1.pos.y), Item1Scale, Item1Rotation);
-            mainImage->blitScaledRotated(Item2.image, fVec2(Item2.size.x/2, Item2.size.y/2), fVec2(Item2.pos.x, Item2.pos.y), Item2Scale, Item2Rotation);
-            mainImage->blitScaledRotated(Item3.image, fVec2(Item3.size.x/2, Item3.size.y/2), fVec2(Item3.pos.x, Item3.pos.y), Item3Scale, Item3Rotation);
-
-            //Menu Text
-            placeText(*mainImage, Item1.topText, iVec2(Item1.pos.x, Item1.pos.y - 54), RGB565_White, font_Roboto_Bold_14, 1.0);
-            placeText(*mainImage, Item1.bottomText, iVec2(Item1.pos.x, Item1.pos.y + 54), RGB565_White, font_Roboto_Bold_14, 1.0);
-            placeText(*mainImage, Item2.topText, iVec2(Item2.pos.x, Item2.pos.y - 54), RGB565_White, font_Roboto_Bold_14, 1.0);
-            placeText(*mainImage, Item2.bottomText, iVec2(Item2.pos.x, Item2.pos.y + 54), RGB565_White, font_Roboto_Bold_14, 1.0);
-            placeText(*mainImage, Item3.topText, iVec2(Item3.pos.x, Item3.pos.y - 54), RGB565_White, font_Roboto_Bold_14, 1.0);
-            placeText(*mainImage, Item3.bottomText, iVec2(Item3.pos.x, Item3.pos.y + 54), RGB565_White, font_Roboto_Bold_14, 1.0);
-
-            //Title
-            mainImage->blitScaledRotated(TextBox, fVec2(TextBox.width()/2, TextBox.height()/2), fVec2(160, 36), 1, 0);
-        }
         //Main Menu Loop with Button Presses.
         void Draw(  bool B1Pressed, bool B2Pressed, bool B3Pressed, 
                     bool B1IsJustReleased, bool B2IsJustReleased, bool B3IsJustReleased,

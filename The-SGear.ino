@@ -3,8 +3,13 @@
 #include <Bounce2.h>
 #include <font_Roboto_Bold.h>
 
+#include <MIDI.h>
+
 #include "Menus/m_MainMenu.h"
 #include "Menus/m_SignalGenerator.h"
+#include "Menus/Synthesizer/m_Oscilators.h"
+
+#include "Menus/Synthesizer/s_Synthesizer.h"
 
 #include "SGearFrame.h"
 //#include "bg.h"
@@ -24,17 +29,17 @@
 #define PIN_TOUCH_CS    255       // optional. set this only if the touchscreen is connected on the same spi bus
 #define SPI_SPEED       40000000  // SPI speed
 
+#define MIDISerial      Serial1
+
 #define BUTTON1         30
 #define BUTTON2         31
 #define BUTTON3         32
 
 #define BUTTON_DEBOUNCE_SPEED 25  //In ms.
 
-#define DIAL1           A15
-#define DIAL2           A16
-#define DIAL3           A17
-
-#define MIDISerial      Serial8
+#define DIAL1           A14
+#define DIAL2           A15
+#define DIAL3           A16
 
 // namespace for draw graphics primitives
 using namespace tgx;
@@ -53,12 +58,18 @@ ILI9341_T4::DiffBuffStatic<6000> diff2;
 //Image that encapsulates framebuffer
 Image<RGB565> im(fb, 320, 240);
 
+//Midi Create Object
+MIDI_CREATE_INSTANCE(HardwareSerial, MIDISerial, MIDI);
+
 //Menu Pointers and Objects (Used for switching menus)
 Menu* CurrentMenu;
 Menu* NextMenu;
 
+s_Synthesizer Synth;
+
 m_MainMenu MainMenu(&im);
 m_SignalGenerator SignalGenerator(&im);
+m_Oscilators Oscilators(&im, &Synth);
 
 //Button Objects
 Bounce b1 = Bounce();
@@ -68,6 +79,11 @@ Bounce b3 = Bounce();
 bool Transition_Switch1 = false;
 bool Transition_Switch2 = false;
 bool Transition_Switch3 = false;
+
+//Dials
+int Dial1Value;
+int Dial2Value;
+int Dial3Value;
 
 RGB565 Transition_Color;
 
@@ -79,7 +95,8 @@ void setup() {
 
   Serial.println("Linking Menus...");
   MainMenu.Link(&SignalGenerator, &MainMenu, &MainMenu);
-  SignalGenerator.Link(&MainMenu, &SignalGenerator, &SignalGenerator);
+  SignalGenerator.Link(&MainMenu, &Oscilators, &SignalGenerator);
+  Oscilators.Link(nullptr, &SignalGenerator, nullptr);
   Serial.println("Menus Linked!");
 
   Serial.println("Setting up Screen...");
@@ -88,30 +105,45 @@ void setup() {
 
   // clear display black
   im.fillScreen(RGB565_Black);
+
+  //Midi setup.
+  MIDI.begin(MIDI_CHANNEL_OMNI);
+  MIDI.setHandleNoteOn(MIDI_NoteOn);
+  MIDI.setHandleNoteOff(MIDI_NoteOff);
+  MIDI.setHandlePitchBend(MIDI_PitchBend);
+  MIDI.setHandleControlChange(MIDI_ControlChange);
   
+  //Button Setup
   Serial.println("Attaching and Activating Buttons...");
   b1.attach(BUTTON1, INPUT);
   b2.attach(BUTTON2, INPUT);
   b3.attach(BUTTON3, INPUT);
-
   b1.interval(BUTTON_DEBOUNCE_SPEED);
   b2.interval(BUTTON_DEBOUNCE_SPEED);
   b3.interval(BUTTON_DEBOUNCE_SPEED);
   Serial.println("Buttons Created!");
   
+  //Initializing the Main loop.
   Serial.println("initializing Current Menu...");
   CurrentMenu = &MainMenu;
   CurrentMenu->Setup();
   TimeTransOUTDone = millis();
   Transition_Color = CurrentMenu->TransitionColor();
 
+  AudioMemory(20);
+  Synth.Setup();
+
   Serial.println("Done!!");
   Serial.println("Beginnning Main Loop.");
 }
 
 void loop() {
-  //Update the input value of the buttons.
+  //Update the input value of the MIDI, BUTTONS, and DIALS
+  MIDI.read(); //The MIDI handles will be taking care of updating everything.
   updateButtons();
+  updateDials();
+
+  Synth.Play();
 
   // Serial.println("In Flag" + CurrentMenu->TransitionINFlag());
   // Serial.println("Out Flag" + CurrentMenu->TransitionOUTFlag());
@@ -183,4 +215,24 @@ void updateButtons(){
   b1.update();
   b2.update();
   b3.update();
+}
+
+void updateDials(){
+  Dial1Value = analogRead(DIAL1);
+  Dial2Value = analogRead(DIAL2);
+  Dial3Value = analogRead(DIAL3);
+}
+
+void MIDI_NoteOn(byte channel, byte pitch, byte velocity){
+  Serial.println(pitch);
+  if(21 <= pitch && pitch <= 108) Synth.AddNote(pitch);
+}
+void MIDI_NoteOff(byte channel, byte pitch, byte velocity){
+  if(21 <= pitch && pitch <= 108) Synth.RemoveNote(pitch);
+}
+void MIDI_PitchBend(byte channel, int bend){
+
+}
+void MIDI_ControlChange(byte channel, byte control, byte value){
+
 }

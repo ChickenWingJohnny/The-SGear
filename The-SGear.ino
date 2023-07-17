@@ -7,11 +7,12 @@
 
 #include "Menus/m_MainMenu.h"
 #include "Menus/m_SignalGenerator.h"
-#include "Menus/Synthesizer/m_Oscilators.h"
+#include "Menus/m_Oscilators.h"
+#include "Menus/m_OscilatorTemplate.h"
 
-#include "Menus/Synthesizer/s_Synthesizer.h"
+#include "Menus/s_Synthesizer.h"
 
-#include "SGearFrame.h"
+//#include "SGearFrame.h"
 //#include "bg.h"
 
 //
@@ -49,14 +50,14 @@ DMAMEM uint16_t ib[240 * 320];  // used for internal buffering
 DMAMEM uint16_t fb[240 * 320];  // paint in this buffer
 
 // the screen driver object
-ILI9341_T4::ILI9341Driver tft(PIN_CS, PIN_DC, PIN_SCK, PIN_MOSI, PIN_MISO, PIN_RESET, PIN_TOUCH_CS, PIN_TOUCH_IRQ);
+DMAMEM ILI9341_T4::ILI9341Driver tft(PIN_CS, PIN_DC, PIN_SCK, PIN_MOSI, PIN_MISO, PIN_RESET, PIN_TOUCH_CS, PIN_TOUCH_IRQ);
 
 // two diff buffers
-ILI9341_T4::DiffBuffStatic<6000> diff1;
-ILI9341_T4::DiffBuffStatic<6000> diff2;
+DMAMEM ILI9341_T4::DiffBuffStatic<6000> diff1;
+DMAMEM ILI9341_T4::DiffBuffStatic<6000> diff2;
 
 //Image that encapsulates framebuffer
-Image<RGB565> im(fb, 320, 240);
+DMAMEM Image<RGB565> im(fb, 320, 240);
 
 //Midi Create Object
 MIDI_CREATE_INSTANCE(HardwareSerial, MIDISerial, MIDI);
@@ -70,6 +71,8 @@ s_Synthesizer Synth;
 m_MainMenu MainMenu(&im);
 m_SignalGenerator SignalGenerator(&im);
 m_Oscilators Oscilators(&im, &Synth);
+m_OscilatorTemplate Oscilator0(&im, &Synth, 0);
+m_OscilatorTemplate Oscilator1(&im, &Synth, 1);
 
 //Button Objects
 Bounce b1 = Bounce();
@@ -211,7 +214,7 @@ void updateScreen(){
     CurrentMenu->Draw(
       !b1.read(), !b2.read(), !b3.read(),
       b1.rose(), b2.rose(), b3.rose(),
-      -1, -1, -1
+      Dial1Value, Dial2Value, Dial3Value
     );
     //im.blit(bg, iVec2(0, 10 -(millis() / 30)%15));
     //im.blitMasked(SGearFrame, RGB565_Black, iVec2(0,0), 1.0f);

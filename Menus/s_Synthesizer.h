@@ -225,12 +225,14 @@ class s_Synthesizer {
             if(notes[0 + notePosOffset] != 0){
                 OSC0_0.frequency(
                     getFrequency( notes[0 + notePosOffset] 
-                        + (osc_0.octave * 12) 
+                        + (osc_0.octave * 12)
+                        + osc_0.detune 
                         + (getBend()*bendRange) ) 
                 );
                 OSC1_0.frequency( 
                     getFrequency( notes[0 + notePosOffset] 
                     + (osc_1.octave * 12) 
+                    + osc_1.detune
                     + (getBend()*bendRange) 
                     ) 
                 );
@@ -239,35 +241,41 @@ class s_Synthesizer {
                 OSC0_1.frequency(
                     getFrequency( notes[1 + notePosOffset] 
                     + (osc_0.octave * 12) 
+                    + osc_0.detune
                     + (getBend()*bendRange) ) 
                 );
                 OSC1_1.frequency( 
                     getFrequency( notes[1 + notePosOffset] 
                     + (osc_1.octave * 12) 
+                    + osc_1.detune
                     + (getBend()*bendRange) ) 
                 );
             }
             if(notes[2 + notePosOffset] != 0){
                 OSC0_2.frequency(
                     getFrequency( notes[2 + notePosOffset] 
-                    + (osc_0.octave * 12) 
+                    + (osc_0.octave * 12)
+                    + osc_0.detune 
                     + (getBend()*bendRange) ) 
                 );
                 OSC1_2.frequency( 
                     getFrequency( notes[2 + notePosOffset] 
-                    + (osc_1.octave * 12) 
+                    + (osc_1.octave * 12)
+                    + osc_1.detune 
                     + (getBend()*bendRange) ) 
                 );
             }
             if(notes[3 + notePosOffset] != 0){
                 OSC0_3.frequency(
                     getFrequency( notes[3 + notePosOffset] 
-                    + (osc_0.octave * 12) 
+                    + (osc_0.octave * 12)
+                    + osc_0.detune 
                     + (getBend()*bendRange) ) 
                 );
                 OSC1_3.frequency( 
                     getFrequency( notes[3 + notePosOffset] 
-                    + (osc_1.octave * 12) 
+                    + (osc_1.octave * 12)
+                    + osc_1.detune 
                     + (getBend()*bendRange) ) 
                 );
             }

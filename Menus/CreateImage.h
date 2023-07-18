@@ -3,45 +3,33 @@
 #include <ILI9341_T4.h>
 #include <tgx.h>
 
-#include "m_MenuItem.h"
-#include "m_Menu.h"
-
 using namespace tgx;
 
-CreateImage MenuShape = CreateImage();
-
 //Stores common shapes that can be used across menus.
-class CreateImage {
-    private:
+namespace CreateImage {
+
+    namespace {
         uint16_t item[16 * 16];
         uint16_t alt_item[16 * 16];
         uint16_t item2[24 * 24];
         uint16_t alt_item2[24 * 24];
         uint16_t transition_in[2*2];
         uint16_t transition_out[2*2];
-    public:
-        Image<RGB565> Item;
-        Image<RGB565> AltItem;
-        Image<RGB565> Item2;
-        Image<RGB565> AltItem2;
-        Image<RGB565> TransitionIn;
-        Image<RGB565> TransitionOut;
-
-        CreateImage(){
-            Item = Image<RGB565>(item, 16, 16);
-            AltItem = Image<RGB565>(alt_item, 16, 16);
-            Item2 = Image<RGB565>(item2, 16, 16);
-            AltItem2 = Image<RGB565>(alt_item2, 16, 16);
-            TransitionIn = Image<RGB565>(transition_in, 16, 16);
-            TransitionOut = Image<RGB565>(transition_out, 16, 16);
-        }
+    }
+        Image<RGB565> Item = Image<RGB565>(item, 16, 16);
+        Image<RGB565> AltItem = Image<RGB565>(alt_item, 16, 16);
+        Image<RGB565> Item2 = Image<RGB565>(item2, 24, 24);
+        Image<RGB565> AltItem2 = Image<RGB565>(alt_item2, 24, 24);
+        Image<RGB565> TransitionIn = Image<RGB565>(transition_in, 2, 2);
+        Image<RGB565> TransitionOut = Image<RGB565>(transition_out, 2, 2);
 
         //Simple Box with outline.
-        void updateRectMenuItem(RGB565 outerColor, RGB565 innerColor, int w, int h, int strokeWidth){
+        void updateRectMenuItem(RGB565 outerColor, RGB565 innerColor){
             Item.fillScreen(outerColor);
             Item.fillRect(1, 1, 14, 14, innerColor);
         }
-        void updateRectAltMenuItem(RGB565 outerColor, RGB565 innerColor, int w, int h, int strokeWidth){
+
+        void updateAltRectMenuItem(RGB565 outerColor, RGB565 innerColor){
             AltItem.fillScreen(outerColor);
             AltItem.fillRect(1, 1, 14, 14, innerColor);
         }
@@ -53,7 +41,7 @@ class CreateImage {
             Item2.fillRect(1, 1, 14, 14, innerColor);
             Item2.fillRect(9, 9, 14, 14, innerColor);
         }
-        void updateDiamondAltMenuItem(RGB565 outerColor, RGB565 innerColor){
+        void updateAltDiamondMenuItem(RGB565 outerColor, RGB565 innerColor){
             AltItem2.fillRect(0, 0, 16, 16, outerColor);
             AltItem2.fillRect(8, 8, 16, 16, outerColor);
             AltItem2.fillRect(1, 1, 14, 14, innerColor);
@@ -104,4 +92,4 @@ class CreateImage {
             placeText(im, text, iVec2(im->lx()/2, im->ly()/2), textColor, font, 1.0);
         }
 
-};
+}

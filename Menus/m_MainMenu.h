@@ -14,18 +14,8 @@ class m_MainMenu : public Menu {
     private:
 
         Image<RGB565>* mainImage;
-
-        uint16_t item[16 * 16];
-        uint16_t alt_item[16 * 16];
         uint16_t text_box[240 * 56];
-        uint16_t transition_in[2*2];
-        uint16_t transition_out[2*2];
-
-        Image<RGB565> SampleMenuItem;
-        Image<RGB565> SampleAltItem;
         Image<RGB565> TextBox;
-        Image<RGB565> TransitionIn;
-        Image<RGB565> TransitionOut;
 
         //The Main Menu Loop Without Inputs
         void Draw(){
@@ -52,32 +42,32 @@ class m_MainMenu : public Menu {
             mainImage->blitScaledRotated(TextBox, fVec2(TextBox.width()/2, TextBox.height()/2), fVec2(160, 36), 1, 0);
         }
 
-        String Item1TopText = "SIGNAL";
-        String Item1BottomText = "GENERATOR";
-        String Item2TopText = "VOLUME";
-        String Item2BottomText = "ENVELOPE";
-        String Item3TopText = "VARIOUS";
-        String Item3BottomText = "EFFECTS";
+        const String Item1TopText = "SIGNAL";
+        const String Item1BottomText = "GENERATOR";
+        const String Item2TopText = "VOLUME";
+        const String Item2BottomText = "ENVELOPE";
+        const String Item3TopText = "VARIOUS";
+        const String Item3BottomText = "EFFECTS";
 
-        int Item1PosX = 64;
-        int Item2PosX = 160;
-        int Item3PosX = 256;
+        const int Item1PosX = 64;
+        const int Item2PosX = 160;
+        const int Item3PosX = 256;
 
-        int Item1Scale = 4;
-        int Item2Scale = 4;
-        int Item3Scale = 4;
+        const int Item1Scale = 4;
+        const int Item2Scale = 4;
+        const int Item3Scale = 4;
 
-        int Item1Rotation = 45;
-        int Item2Rotation = 45;
-        int Item3Rotation = 45;
+        const int Item1Rotation = 45;
+        const int Item2Rotation = 45;
+        const int Item3Rotation = 45;
 
         MenuItem Item1 = {};
         MenuItem Item2 = {};
         MenuItem Item3 = {};
 
-        RGB32 col1;
-        RGB32 col2;
-        RGB32 col3;
+        const RGB32 col1 = RGB32(0, 0, 255);
+        const RGB32 col2 = RGB32(0, 2, 20);
+        const RGB32 col3 = RGB32(0, 7, 70);
 
         bool transitionINFlag = true;
         bool transitionOUTFlag = false;
@@ -98,16 +88,11 @@ class m_MainMenu : public Menu {
     public:
         m_MainMenu(Image<RGB565>* mI){
             mainImage = mI;
-            SampleMenuItem = Image<RGB565>(item, 16, 16);
-            SampleAltItem = Image<RGB565>(alt_item, 16, 16);
             TextBox = Image<RGB565>(text_box, 240, 56);
-            TransitionIn = Image<RGB565>(transition_in, 2, 2);
-            TransitionOut = Image<RGB565>(transition_out, 2, 2);
 
-
-            Item1.image = SampleMenuItem;
-            Item2.image = SampleMenuItem;
-            Item3.image = SampleMenuItem;
+            Item1.image = CreateImage::Item;
+            Item2.image = CreateImage::Item;
+            Item3.image = CreateImage::Item;
 
             Item1.topText = Item1TopText;
             Item1.bottomText = Item1BottomText;
@@ -116,12 +101,12 @@ class m_MainMenu : public Menu {
             Item3.topText = Item3TopText;
             Item3.bottomText = Item3BottomText;
 
-            Item1.size.x = SampleMenuItem.width();
-            Item2.size.x = SampleMenuItem.width();
-            Item3.size.x = SampleMenuItem.width();
-            Item1.size.y = SampleMenuItem.height();
-            Item2.size.y = SampleMenuItem.height();
-            Item3.size.y = SampleMenuItem.height();
+            Item1.size.x = Item1.image.width();
+            Item2.size.x = Item2.image.width();
+            Item3.size.x = Item3.image.width();
+            Item1.size.y = Item1.image.height();
+            Item2.size.y = Item2.image.height();
+            Item3.size.y = Item3.image.height();
 
             Item1.pos.x = Item1PosX;
             Item2.pos.x = Item2PosX;
@@ -135,10 +120,6 @@ class m_MainMenu : public Menu {
             Item1.rot = Item1Rotation;
             Item2.rot = Item2Rotation;
             Item3.rot = Item3Rotation;
-
-            col1 = RGB32(0, 0, 255);
-            col2 = RGB32(0, 2, 20);
-            col3 = RGB32(0, 7, 70);
         }
         void Link(Menu* Tm1, Menu* Tm2, Menu* Tm3){
             TransitionMenu1 = Tm1;
@@ -149,21 +130,21 @@ class m_MainMenu : public Menu {
         void Setup(){
             Serial.println("Setup m_MainMenu");
 
-            CreateImage::createTransition(&TransitionIn, col1);
-            CreateImage::createTransition(&TransitionOut, TransitionColor());
+            CreateImage::updateTransitionIn(col1);
+            CreateImage::updateTransitionOut(TransitionColor());
 
-            CreateImage::createRectMenuItem(&SampleMenuItem, col1, col2, 16, 16, 1);
-            CreateImage::createRectMenuItem(&SampleAltItem, col2, col1, 16, 16, 1);
+            CreateImage::updateRectMenuItem(col1, col2);
+            CreateImage::updateAltRectMenuItem(col2, col1);
             CreateImage::createTextBox(&TextBox, "MAIN MENU", 4, col2, col1, RGB565_White, font_Roboto_Bold_32);
         }
-        void Setup(RGB565 TransitionINColor){ 
+        void Setup(RGB565 TransitionINColor){
             Serial.println("Setup m_MainMenu");
 
-            CreateImage::createTransition(&TransitionIn, TransitionINColor);
-            CreateImage::createTransition(&TransitionOut, TransitionColor());
+            CreateImage::updateTransitionIn(TransitionINColor);
+            CreateImage::updateTransitionOut(TransitionColor());
 
-            CreateImage::createRectMenuItem(&SampleMenuItem, col1, col2, 16, 16, 1);
-            CreateImage::createRectMenuItem(&SampleAltItem, col2, col1, 16, 16, 1);
+            CreateImage::updateRectMenuItem(col1, col2);
+            CreateImage::updateAltRectMenuItem(col2, col1);
             CreateImage::createTextBox(&TextBox, "MAIN MENU", 4, col2, col1, RGB565_White, font_Roboto_Bold_32);
         }
 
@@ -173,7 +154,7 @@ class m_MainMenu : public Menu {
         }
         void TransitionIN(){
             Draw();
-            mainImage->blitScaledRotated(TransitionIn, fVec2(TransitionOut.width()/2, TransitionOut.height()/2), fVec2(mainImage->width()/2, mainImage->height()/2), TransitionScale, 45);
+            mainImage->blitScaledRotated(CreateImage::TransitionIn, fVec2(CreateImage::TransitionIn.width()/2, CreateImage::TransitionIn.height()/2), fVec2(mainImage->width()/2, mainImage->height()/2), TransitionScale, 45);
             TransitionScale /= TRANSITION_RATE;
             if(TransitionScale <= TRANSITION_MIN) {
                 transitionINFlag = false;
@@ -185,10 +166,10 @@ class m_MainMenu : public Menu {
                     bool B1IsJustReleased, bool B2IsJustReleased, bool B3IsJustReleased,
                     int Dial1, int Dial2, int Dial3
         ){
-            B1Pressed ? Item1.image = SampleAltItem : Item1.image = SampleMenuItem;
-            B2Pressed ? Item2.image = SampleAltItem : Item2.image = SampleMenuItem;
-            B3Pressed ? Item3.image = SampleAltItem : Item3.image = SampleMenuItem;
-
+            B1Pressed ? Item1.image = CreateImage::AltItem : Item1.image = CreateImage::Item;
+            B2Pressed ? Item2.image = CreateImage::AltItem : Item2.image = CreateImage::Item;
+            B3Pressed ? Item3.image = CreateImage::AltItem : Item3.image = CreateImage::Item;
+            
             Draw();
 
             //Bitshifted bools to make it easier :)
@@ -228,15 +209,15 @@ class m_MainMenu : public Menu {
             if(!transitionOUTDone){
                 if(TransitionButton >> 2){
                     Draw();
-                    mainImage->blitScaledRotated(TransitionOut, fVec2(TransitionOut.width()/2, TransitionOut.height()/2), fVec2(Item1.pos.x, Item1.pos.y), TransitionScale, 45);
+                    mainImage->blitScaledRotated(CreateImage::TransitionOut, fVec2(CreateImage::TransitionOut.width()/2, CreateImage::TransitionOut.height()/2), fVec2(Item1.pos.x, Item1.pos.y), TransitionScale, 45);
                     TransitionScale *= TRANSITION_RATE;
                 } else if (TransitionButton >> 1) {
                     Draw();
-                    mainImage->blitScaledRotated(TransitionOut, fVec2(TransitionOut.width()/2, TransitionOut.height()/2), fVec2(Item2.pos.x, Item2.pos.y), TransitionScale, 45);
+                    mainImage->blitScaledRotated(CreateImage::TransitionOut, fVec2(CreateImage::TransitionOut.width()/2, CreateImage::TransitionOut.height()/2), fVec2(Item2.pos.x, Item2.pos.y), TransitionScale, 45);
                     TransitionScale *= TRANSITION_RATE;
                 } else if (TransitionButton) {
                     Draw();
-                    mainImage->blitScaledRotated(TransitionOut, fVec2(TransitionOut.width()/2, TransitionOut.height()/2), fVec2(Item3.pos.x, Item3.pos.y), TransitionScale, 45);
+                    mainImage->blitScaledRotated(CreateImage::TransitionOut, fVec2(CreateImage::TransitionOut.width()/2, CreateImage::TransitionOut.height()/2), fVec2(Item3.pos.x, Item3.pos.y), TransitionScale, 45);
                     TransitionScale *= TRANSITION_RATE;
                 }
             }

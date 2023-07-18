@@ -12,12 +12,12 @@ class m_Oscilators : public Menu {
         Image<RGB565>* mainImage;
         s_Synthesizer* Synth;
 
-        String Item1TopText = "SIGNAL";
-        String Item1BottomText = "GENERATOR";
-        String Item2TopText = "VOLUME";
-        String Item2BottomText = "ENVELOPE";
-        String Item3TopText = "VARIOUS";
-        String Item3BottomText = "EFFECTS";
+        const String Item1TopText = "SIGNAL";
+        const String Item1BottomText = "GENERATOR";
+        const String Item2TopText = "VOLUME";
+        const String Item2BottomText = "ENVELOPE";
+        const String Item3TopText = "VARIOUS";
+        const String Item3BottomText = "EFFECTS";
 
         int Item1PosX = 64;
         int Item2PosX = 160;
@@ -35,9 +35,9 @@ class m_Oscilators : public Menu {
         MenuItem Item2 = {};
         MenuItem Item3 = {};
 
-        RGB32 col1;
-        RGB32 col2;
-        RGB32 col3;
+        const RGB32 col1 = RGB32(0, 0, 255);
+        const RGB32 col2 = RGB32(0, 2, 20);
+        const RGB32 col3 = RGB32(0, 7, 70);
 
         bool transitionINFlag = true;
         bool transitionOUTFlag = false;
@@ -55,14 +55,14 @@ class m_Oscilators : public Menu {
 
         Menu* TransitioningMenu;
 
+        void Draw(){
+
+        }
+
     public:
         m_Oscilators(Image<RGB565>* im, s_Synthesizer* s){
             mainImage = im;
             Synth = s;
-
-            col1 = RGB32(0, 0, 255);
-            col2 = RGB32(0, 2, 20);
-            col3 = RGB32(0, 7, 70);
         }
         
         void Link(Menu* Tm1, Menu* Tm2, Menu* Tm3){

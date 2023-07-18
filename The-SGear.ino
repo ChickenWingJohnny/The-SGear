@@ -63,6 +63,7 @@ DMAMEM Image<RGB565> im(fb, 320, 240);
 MIDI_CREATE_INSTANCE(HardwareSerial, MIDISerial, MIDI);
 
 //Menu Pointers and Objects (Used for switching menus)
+Menu* PrevMenu;
 Menu* CurrentMenu;
 Menu* NextMenu;
 
@@ -228,7 +229,7 @@ void updateScreen(){
         NextMenu = CurrentMenu->MenuToTransitionTo();
         Transition_Color = CurrentMenu->TransitionColor();
       }
-
+      PrevMenu = CurrentMenu;
       CurrentMenu->Destruct();
       CurrentMenu = NextMenu;
       NextMenu = nullptr;

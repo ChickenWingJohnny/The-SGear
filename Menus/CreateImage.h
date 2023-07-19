@@ -13,6 +13,7 @@ namespace CreateImage {
         uint16_t alt_item[16 * 16];
         uint16_t item2[24 * 24];
         uint16_t alt_item2[24 * 24];
+        uint16_t dial[37 * 37];
         uint16_t transition_in[2*2];
         uint16_t transition_out[2*2];
     }
@@ -20,6 +21,7 @@ namespace CreateImage {
         Image<RGB565> AltItem = Image<RGB565>(alt_item, 16, 16);
         Image<RGB565> Item2 = Image<RGB565>(item2, 24, 24);
         Image<RGB565> AltItem2 = Image<RGB565>(alt_item2, 24, 24);
+        Image<RGB565> Dial = Image<RGB565>(dial, 37, 37);
         Image<RGB565> TransitionIn = Image<RGB565>(transition_in, 2, 2);
         Image<RGB565> TransitionOut = Image<RGB565>(transition_out, 2, 2);
 
@@ -28,7 +30,6 @@ namespace CreateImage {
             Item.fillScreen(outerColor);
             Item.fillRect(1, 1, 14, 14, innerColor);
         }
-
         void updateAltRectMenuItem(RGB565 outerColor, RGB565 innerColor){
             AltItem.fillScreen(outerColor);
             AltItem.fillRect(1, 1, 14, 14, innerColor);
@@ -46,6 +47,14 @@ namespace CreateImage {
             AltItem2.fillRect(8, 8, 16, 16, outerColor);
             AltItem2.fillRect(1, 1, 14, 14, innerColor);
             AltItem2.fillRect(9, 9, 14, 14, innerColor);
+        }
+
+        void updateDialMenuItem(RGB565 outerColor, RGB565 innerColor){
+            Dial.fillCircle(Dial.lx()/2, Dial.ly()/2, 18, outerColor, outerColor);
+            Dial.fillCircle(Dial.lx()/2, Dial.ly()/2, 16, innerColor, innerColor);
+            Dial.drawFastVLine(iVec2((Dial.lx()/2)-1, 0), 10, RGB565_White);
+            Dial.drawFastVLine(iVec2(Dial.lx()/2, 0), 10, RGB565_White);
+            Dial.drawFastVLine(iVec2((Dial.lx()/2)+1, 0), 10, RGB565_White);
         }
 
         //Fills the Screen.

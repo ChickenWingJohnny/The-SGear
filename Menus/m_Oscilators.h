@@ -12,32 +12,41 @@ class m_Oscilators : public Menu {
         Image<RGB565>* mainImage;
         s_Synthesizer* Synth;
 
-        const String Item1TopText = "SIGNAL";
-        const String Item1BottomText = "GENERATOR";
-        const String Item2TopText = "VOLUME";
-        const String Item2BottomText = "ENVELOPE";
-        const String Item3TopText = "VARIOUS";
-        const String Item3BottomText = "EFFECTS";
-
-        int Item1PosX = 64;
+        int Item1PosX = 100;
         int Item2PosX = 160;
-        int Item3PosX = 256;
+        int Item3PosX = 220;
+        int Item1PosY = 120;
+        int Item2PosY = 220;
+        int Item3PosY = 120;
+        int Dial1PosX = 40;
+        int Dial3PosX = 280;
+        int Dial1PosY = 120;
+        int Dial3PosY = 120;
 
-        int Item1Scale = 2;
-        int Item2Scale = 2;
-        int Item3Scale = 2;
+        float Item1Scale = 5.5;
+        float Item2Scale = 2;
+        float Item3Scale = 5.5;
+        float Dial1Scale = 1.25;
+        float Dial3Scale = 1.25;
 
         int Item1Rotation = 45;
         int Item2Rotation = 45;
         int Item3Rotation = 45;
+        float Dial1Rotation = 0;
+        float Dial3Rotation = 0;
+
+        int Osc0Type;
+        int Osc1Type;
 
         MenuItem Item1 = {};
         MenuItem Item2 = {};
         MenuItem Item3 = {};
 
-        const RGB32 col1 = RGB32(0, 0, 255);
-        const RGB32 col2 = RGB32(0, 2, 20);
-        const RGB32 col3 = RGB32(0, 7, 70);
+        const RGB32 col1 = RGB32(0, 255, 0);
+        const RGB32 col2 = RGB32(2, 20, 0);   
+        const RGB32 col3 = RGB32(7, 70, 0);
+
+        const RGB32 lineColor = col1;
 
         bool transitionINFlag = true;
         bool transitionOUTFlag = false;
@@ -56,13 +65,82 @@ class m_Oscilators : public Menu {
         Menu* TransitioningMenu;
 
         void Draw(){
+            //Background
+            mainImage->fillScreenVGradient(RGB565_Black, col3);
 
+            //Lines.
+            mainImage->drawFastVLine(iVec2(160-1, 0), 60, lineColor);
+            mainImage->drawFastVLine(iVec2(160, 0), 60, lineColor);
+            mainImage->drawFastVLine(iVec2(160+1, 0), 60, lineColor);
+
+            mainImage->drawLine(iVec2(160-1, 60), iVec2(Item1PosX-1, Item1PosY), lineColor);
+            mainImage->drawLine(iVec2(160, 60), iVec2(Item1PosX, Item1PosY), lineColor);
+            mainImage->drawLine(iVec2(160+1, 60), iVec2(Item1PosX+1, Item1PosY), lineColor);
+            mainImage->drawLine(iVec2(160-1, 60), iVec2(Item3PosX-1, Item3PosY), lineColor);
+            mainImage->drawLine(iVec2(160, 60), iVec2(Item3PosX, Item3PosY), lineColor);
+            mainImage->drawLine(iVec2(160+1, 60), iVec2(Item3PosX+1, Item3PosY), lineColor);
+
+            mainImage->fillCircle(iVec2(160, 63), 5, lineColor, lineColor);
+
+            mainImage->drawFastVLine(iVec2(130-1, 80), 10, lineColor);
+            mainImage->drawFastVLine(iVec2(130, 80), 10, lineColor);
+            mainImage->drawFastVLine(iVec2(130+1, 80), 10, lineColor);
+            mainImage->drawFastHLine(iVec2(130, 90-1), 10, lineColor);
+            mainImage->drawFastHLine(iVec2(130, 90), 10, lineColor);
+            mainImage->drawFastHLine(iVec2(130, 90+1), 10, lineColor);
+
+            mainImage->drawFastVLine(iVec2(190-1, 80), 10, lineColor);
+            mainImage->drawFastVLine(iVec2(190, 80), 10, lineColor);
+            mainImage->drawFastVLine(iVec2(190+1, 80), 10, lineColor);
+            mainImage->drawFastHLine(iVec2(180, 90-1), 10, lineColor);
+            mainImage->drawFastHLine(iVec2(180, 90), 10, lineColor);
+            mainImage->drawFastHLine(iVec2(180, 90+1), 10, lineColor);
+
+            mainImage->drawLine(iVec2(Item1PosX-1, Item1PosY), iVec2(160-1, 180), lineColor);
+            mainImage->drawLine(iVec2(Item1PosX, Item1PosY), iVec2(160, 180), lineColor);
+            mainImage->drawLine(iVec2(Item1PosX+1, Item1PosY), iVec2(160+1, 180), lineColor);
+            mainImage->drawLine(iVec2(Item3PosX-1, Item3PosY), iVec2(160-1, 180), lineColor);
+            mainImage->drawLine(iVec2(Item3PosX, Item3PosY), iVec2(160, 180), lineColor);
+            mainImage->drawLine(iVec2(Item3PosX+1, Item3PosY), iVec2(160+1, 180), lineColor);
+
+            mainImage->fillCircle(iVec2(160, 177), 5, lineColor, lineColor);
+
+            mainImage->drawFastVLine(iVec2(160-1, 180), 60, lineColor);
+            mainImage->drawFastVLine(iVec2(160, 180), 60, lineColor);
+            mainImage->drawFastVLine(iVec2(160+1, 180), 60, lineColor);
+
+            //Main Images
+            mainImage->blitScaledRotated(Item1.image, fVec2(Item1.size.x/2.0, Item1.size.y/2.0), fVec2(Item1.pos.x, Item1.pos.y), Item1.scale, Item1.rot);
+            mainImage->blitScaledRotated(Item3.image, fVec2(Item3.size.x/2.0, Item3.size.y/2.0), fVec2(Item3.pos.x, Item3.pos.y), Item3.scale, Item3.rot);
+
+            mainImage->blitScaledRotatedMasked(CreateImage::Dial, RGB565_Black, fVec2(CreateImage::Dial.lx()/2.0, CreateImage::Dial.ly()/2.0), fVec2(Dial1PosX, Dial1PosY), Dial1Scale, Dial1Rotation, 1.0);
+            mainImage->blitScaledRotatedMasked(CreateImage::Dial, RGB565_Black, fVec2(CreateImage::Dial.lx()/2.0, CreateImage::Dial.ly()/2.0), fVec2(Dial3PosX, Dial3PosY), Dial3Scale, Dial3Rotation, 1.0);
         }
 
     public:
         m_Oscilators(Image<RGB565>* im, s_Synthesizer* s){
             mainImage = im;
             Synth = s;
+
+            Item1.image = CreateImage::Item;
+            Item2.image = CreateImage::Item;
+            Item3.image = CreateImage::Item;
+
+            Item1.size = iVec2(Item1.image.width(), Item1.image.height());
+            Item2.size = iVec2(Item2.image.width(), Item2.image.height());
+            Item3.size = iVec2(Item3.image.width(), Item3.image.height());
+
+            Item1.pos = iVec2(Item1PosX, Item1PosY);
+            Item2.pos = iVec2(Item2PosX, Item2PosY);
+            Item3.pos = iVec2(Item3PosX, Item3PosY);
+
+            Item1.scale = Item1Scale;
+            Item2.scale = Item2Scale;
+            Item3.scale = Item3Scale;
+
+            Item1.rot = Item1Rotation;
+            Item2.rot = Item2Rotation;
+            Item3.rot = Item3Rotation;
         }
         
         void Link(Menu* Tm1, Menu* Tm2, Menu* Tm3){
@@ -73,10 +151,18 @@ class m_Oscilators : public Menu {
 
         //Instantiates everything inside the menu. Pre-draws the images, and stores the TransitionINColor.
         void Setup(){
-
+            Osc0Type = Synth->osc_0.type;
+            Osc1Type = Synth->osc_1.type;
+            CreateImage::updateRectMenuItem(col1, col2);
+            CreateImage::updateAltRectMenuItem(col2, col1);
+            CreateImage::updateDialMenuItem(col1, col2);
         }
         void Setup(RGB565 TransitionINColor){
-
+            Osc0Type = Synth->osc_0.type;
+            Osc1Type = Synth->osc_1.type;
+            CreateImage::updateRectMenuItem(col1, col2);
+            CreateImage::updateAltRectMenuItem(col2, col1);
+            CreateImage::updateDialMenuItem(col1, col2);
         }
 
         //The flag for if the TransitionIN should Happen.
@@ -86,7 +172,7 @@ class m_Oscilators : public Menu {
         //After the previous menu is destroyed, and the current menu is setup, transition in is called every
         //frame until it is done. Will implicitly stop drawing if it is done Transitioning in.
         void TransitionIN(){
-
+            transitionINFlag = false;
         }
 
         //Draws the static of the menu. Controls the inputs of the menu as well.
@@ -98,7 +184,10 @@ class m_Oscilators : public Menu {
             bool B1IsJustReleased, bool B2IsJustReleased, bool B3IsJustReleased,
             int Dial1, int Dial2, int Dial3
         ){
-
+            Dial1Rotation = 300*(Dial1/1024.0) - 210;
+            Dial3Rotation = 300*(Dial3/1024.0) - 210;
+            Serial.println(Dial1Rotation);
+            Draw();
         }
 
         //The flag for if the TransitionOUT should happen.

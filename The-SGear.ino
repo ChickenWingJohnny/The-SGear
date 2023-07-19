@@ -100,7 +100,7 @@ void setup() {
   Serial.println("Linking Menus...");
   MainMenu.Link(&SignalGenerator, &MainMenu, &MainMenu);
   SignalGenerator.Link(&MainMenu, &Oscilators, &SignalGenerator);
-  Oscilators.Link(nullptr, &SignalGenerator, nullptr);
+  Oscilators.Link(&Oscilator0, &SignalGenerator, &Oscilator0);
   Serial.println("Menus Linked!");
 
   Serial.println("Setting up Screen...");
@@ -187,9 +187,11 @@ void updateButtons(){
 }
 
 void updateDials(){
-  Dial1Value = analogRead(DIAL1);
-  Dial2Value = analogRead(DIAL2);
-  Dial3Value = analogRead(DIAL3);
+  Dial1Value = -analogRead(DIAL1);
+  Dial2Value = -analogRead(DIAL2);
+  Dial3Value = -analogRead(DIAL3);
+
+  Serial.println(Dial1Value);
 }
 
 void updateScreen(){

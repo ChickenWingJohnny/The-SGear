@@ -54,12 +54,11 @@ class m_SignalGenerator : public Menu {
         bool transitionINFlag = true;
         bool transitionOUTFlag = false;
         bool transitionOUTDone = false;
-        int timeTransOUT;
         uint TransitionButton = 0;
-       
 
         double TransitionScale = 700;
-        double TransitionRotation = 0;
+        int timeTransOUT;
+        bool TransitionPart2 = false;
         const int TRANSITION_MIN = 1;
         const int TRANSITION_MAX = 700;
         const int TRANSITION_MAX2 = 2.5;
@@ -145,7 +144,7 @@ class m_SignalGenerator : public Menu {
             CreateImage::updateRectMenuItem(col1, col2);
             CreateImage::updateAltRectMenuItem(col2, col1);
             CreateImage::updateDiamondMenuItem(col1, col2);
-            CreateImage::updateAltDiamondMenuItem(col2, col2);
+            CreateImage::updateAltDiamondMenuItem(col2, col1);
             CreateImage::createTextBox(&TextBox, "SIGNAL GENERATOR", 4, col2, col1, RGB565_White, font_Roboto_Bold_28);
         }
 
@@ -233,7 +232,7 @@ class m_SignalGenerator : public Menu {
                     TransitionScale *= TRANSITION_RATE;
                 } else if (TransitionButton >> 1) {
                     //TODO: MAKE THIS A COOL TRANSITION :)
-                    if(timeElapsed < 500){
+                    if(timeElapsed < 500 && !TransitionPart2){
                         Item3TextPos.x += (timeElapsed/150.0);
                         Item3.pos.x += (timeElapsed/150.0);
                         Item2TextPos.y += (timeElapsed/150.0);
@@ -243,12 +242,28 @@ class m_SignalGenerator : public Menu {
 
                         Item2.pos = iVec2(Item2PosX, 20*(-timeElapsed/1000.0) + Item2PosY);
                         Item2.rot = 180 * (timeElapsed/1000.0) + Item2Rotation;
-                        Item2.scale = 4*(timeElapsed/1000.0) + Item2Scale;
+                        Item2.scale = 3 * (timeElapsed/1000.0) + Item2Scale;
                         Draw();
+                    } else if(timeElapsed > 500 && !TransitionPart2) {
+                        CreateImage::updateTransitionIn(col2);
+                        CreateImage::updateTransitionOut(col1);
+                        timeTransOUT = millis();
+                        TransitionPart2 = true;
+                    } else if (timeElapsed < 500 && TransitionPart2) {
+                        mainImage->fillScreenVGradient(RGB565_Black, col3);
+
+                        int Osc0x = 60*(-timeElapsed/1000.0) + 130; //to 100 in 0.5 seconds
+                        int Osc1x = 60*(timeElapsed/1000.0) + 190; //to 220 in 0.5 seconds
+
+                        //Items should be 5.5 scale
+
+                        mainImage->blitScaledRotated(CreateImage::TransitionOut, fVec2(CreateImage::TransitionOut.lx()/2, CreateImage::TransitionOut.ly()/2), fVec2(Osc0x, 120), 44.0F, 45);
+                        mainImage->blitScaledRotated(CreateImage::TransitionOut, fVec2(CreateImage::TransitionOut.lx()/2, CreateImage::TransitionOut.ly()/2), fVec2(Osc1x, 120), 44.0F, 45);
+                        mainImage->blitScaledRotated(CreateImage::TransitionIn, fVec2(CreateImage::TransitionIn.lx()/2, CreateImage::TransitionIn.ly()/2), fVec2(Osc0x, 120), 40.0F, 45);
+                        mainImage->blitScaledRotated(CreateImage::TransitionIn, fVec2(CreateImage::TransitionIn.lx()/2, CreateImage::TransitionIn.ly()/2), fVec2(Osc1x, 120), 40.0F, 45);
                     }
-                    else if(timeElapsed < 1000){
-                        mainImage->fillScreenVGradient(RGB565_Black, col3); 
-                        mainImage->blitScaledRotatedMasked(Item2.image, RGB565_Black, fVec2(Item2.size.x/2, Item2.size.y/2), fVec2(Item2.pos.x, Item2.pos.y), Item2.scale, Item2.rot, 1.0);
+                    else{
+                        transitionOUTDone = true;
                     }
                     
                     //mainImage->blitScaledRotated(CreateImage::TransitionOut, fVec2(CreateImage::TransitionOut.width()/2, CreateImage::TransitionOut.height()/2), fVec2(Item1.pos.x, Item1.pos.y), TransitionScale, 45);

@@ -53,7 +53,7 @@ class m_Oscilators : public Menu {
         bool transitionOUTDone = false;
         uint TransitionButton = 0;
 
-        double TransitionScale = 700;
+        double TransitionScale = 1;
         const int TRANSITION_MIN = 1;
         const int TRANSITION_MAX = 700;
         const double TRANSITION_RATE = 1.20;
@@ -180,14 +180,40 @@ class m_Oscilators : public Menu {
         //Is Just Released parameters should be whether the button is JUST released.
         //Dial 1 passes through the analog parameters of the 3 dials.
         void Draw(
-            bool B1IsPressed, bool B2IsPressed, bool B3IsPressed, 
+            bool B1Pressed, bool B2Pressed, bool B3Pressed, 
             bool B1IsJustReleased, bool B2IsJustReleased, bool B3IsJustReleased,
             int Dial1, int Dial2, int Dial3
         ){
             Dial1Rotation = 300*(Dial1/1024.0) - 210;
             Dial3Rotation = 300*(Dial3/1024.0) - 210;
-            Serial.println(Dial1Rotation);
+
+            B1Pressed ? Item1.image = CreateImage::AltItem : Item1.image = CreateImage::Item;
+            //B2Pressed ? Item2.image = CreateImage::AltItem2 : Item2.image = CreateImage::Item2;
+            B3Pressed ? Item3.image = CreateImage::AltItem : Item3.image = CreateImage::Item;
+
             Draw();
+
+            //Bitshifted bools to make it easier :)
+            //Could move Transition out here???
+            if(TransitionButton == 0 && TransitioningMenu == nullptr) {
+                TransitionButton = B1IsJustReleased << 2 | B2IsJustReleased << 1 | B3IsJustReleased;
+                if(TransitionButton != 0) {
+                    transitionOUTFlag = true;
+                     //Serial.println(TransitionButton);
+                    if(TransitionButton == 0b100){
+                        Serial.println("Button 1 Released... Activating Transition for Button 1");
+                        TransitioningMenu = TransitionMenu1;
+                    }
+                    else if (TransitionButton == 0b010){
+                        Serial.println("Button 2 Released... Activating Transition for Button 2");
+                        TransitioningMenu = TransitionMenu2;
+                    }
+                    else if (TransitionButton == 0b001){
+                        Serial.println("Button 3 Released... Activating Transition for Button 3");
+                        TransitioningMenu = TransitionMenu3;
+                    }     
+                }
+            }
         }
 
         //The flag for if the TransitionOUT should happen.
@@ -201,7 +227,28 @@ class m_Oscilators : public Menu {
         //Once the "Back button" is Pressed then released, TransitionOUT will be called every frame until it's done.
         //Will implicitly stop drawing if it is done Transitioning out.
         void TransitionOUT(){
+            if(TransitionScale > TRANSITION_MAX){
+                mainImage->fillScreen(TransitionColor());
+                Serial.println("Transition to ... Done.");
+                transitionOUTDone = true;
+            }
 
+            if(!transitionOUTDone){
+                if(TransitionButton >> 2){
+                    Draw();
+                    mainImage->blitScaledRotated(CreateImage::TransitionOut, fVec2(CreateImage::TransitionOut.width()/2, CreateImage::TransitionOut.height()/2), fVec2(Item1.pos.x, Item1.pos.y), TransitionScale, 45);
+                    TransitionScale *= TRANSITION_RATE;
+                } else if (TransitionButton >> 1) {
+                    
+                    
+                    //mainImage->blitScaledRotated(CreateImage::TransitionOut, fVec2(CreateImage::TransitionOut.width()/2, CreateImage::TransitionOut.height()/2), fVec2(Item1.pos.x, Item1.pos.y), TransitionScale, 45);
+                    //TransitionScale *= TRANSITION_RATE;
+                } else if (TransitionButton) {
+                    Draw();
+                    mainImage->blitScaledRotated(CreateImage::TransitionOut, fVec2(CreateImage::TransitionOut.width()/2, CreateImage::TransitionOut.height()/2), fVec2(Item3.pos.x, Item3.pos.y), TransitionScale, 45);
+                    TransitionScale *= TRANSITION_RATE;
+                }
+            }
         }
         
         //The Transition OUT color of the current menu INTO the next menu.

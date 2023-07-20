@@ -129,7 +129,7 @@ void setup() {
   
   //Initializing the Main loop.
   Serial.println("initializing Current Menu...");
-  CurrentMenu = &MainMenu;
+  CurrentMenu = &Oscilator0;
   CurrentMenu->Setup();
   TimeTransOUTDone = millis();
   Transition_Color = CurrentMenu->TransitionColor();

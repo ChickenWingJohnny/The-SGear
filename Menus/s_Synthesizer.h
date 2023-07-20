@@ -120,6 +120,9 @@ class s_Synthesizer {
         bool note2Active = false;
         bool note3Active = false;
         Oscilator osc_1;
+
+        int Osc0PrevType = 2;
+        int Osc1PrevType = 1;
         
 
         //Store at most 8 notes, play at most 3, in hz.
@@ -158,14 +161,14 @@ class s_Synthesizer {
             OSC0_2.amplitude(MAX_AMPLITUDE);
             OSC0_3.amplitude(MAX_AMPLITUDE);
 
-            OSC1_0.begin(osc_1.type);
-            OSC1_1.begin(osc_1.type);
-            OSC1_2.begin(osc_1.type);
-            OSC1_3.begin(osc_1.type);
-            OSC1_0.amplitude(MAX_AMPLITUDE);
-            OSC1_1.amplitude(MAX_AMPLITUDE);
-            OSC1_2.amplitude(MAX_AMPLITUDE);
-            OSC1_3.amplitude(MAX_AMPLITUDE);
+            // OSC1_0.begin(osc_1.type);
+            // OSC1_1.begin(osc_1.type);
+            // OSC1_2.begin(osc_1.type);
+            // OSC1_3.begin(osc_1.type);
+            // OSC1_0.amplitude(MAX_AMPLITUDE);
+            // OSC1_1.amplitude(MAX_AMPLITUDE);
+            // OSC1_2.amplitude(MAX_AMPLITUDE);
+            // OSC1_3.amplitude(MAX_AMPLITUDE);
 
             ADSR_AMPLITUDE_0.attack(attack);
             ADSR_AMPLITUDE_0.decay(decay);
@@ -212,6 +215,10 @@ class s_Synthesizer {
             // OSC2_MIXER.gain(1, osc_1.level);
             // OSC3_MIXER.gain(0, osc_0.level);
             // OSC3_MIXER.gain(1, osc_1.level);
+
+            //Update Type of Oscilators
+            if(osc_0.type != Osc0PrevType) updateType(osc_0.type, 0);
+            if(osc_1.type != Osc1PrevType) updateType(osc_1.type, 1);
 
             //Attempt to normalize waves :)
             double gainFactor = 1.0/notesFull;
@@ -281,6 +288,27 @@ class s_Synthesizer {
             }
         }
 
+        void updateType(int type, int oscilator){
+            switch (oscilator)
+            {
+                case 0:
+                    OSC0_0.begin(type);
+                    OSC0_1.begin(type);
+                    OSC0_2.begin(type);
+                    OSC0_3.begin(type);
+                    Osc0PrevType = type;
+                    break;
+                case 1:
+                    OSC1_0.begin(type);
+                    OSC1_1.begin(type);
+                    OSC1_2.begin(type);
+                    OSC1_3.begin(type);
+                    Osc1PrevType = type;
+                    break;
+                default:
+                    break;
+            }
+        }
         void updateADSR(int attack, int decay, double sustain, int release){
             
         }

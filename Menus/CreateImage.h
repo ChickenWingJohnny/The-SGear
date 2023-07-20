@@ -16,6 +16,7 @@ namespace CreateImage {
         uint16_t dial[37 * 37];
         uint16_t transition_in[2*2];
         uint16_t transition_out[2*2];
+        uint16_t back_arrow[32*32];
     }
         Image<RGB565> Item = Image<RGB565>(item, 16, 16);
         Image<RGB565> AltItem = Image<RGB565>(alt_item, 16, 16);
@@ -24,6 +25,7 @@ namespace CreateImage {
         Image<RGB565> Dial = Image<RGB565>(dial, 37, 37);
         Image<RGB565> TransitionIn = Image<RGB565>(transition_in, 2, 2);
         Image<RGB565> TransitionOut = Image<RGB565>(transition_out, 2, 2);
+        Image<RGB565> BackArrow = Image<RGB565>(back_arrow, 32, 32);
 
         //Simple Box with outline.
         void updateRectMenuItem(RGB565 outerColor, RGB565 innerColor){
@@ -65,6 +67,16 @@ namespace CreateImage {
             TransitionOut.fillScreen(transitionOutColor);
         }
         
+        void updateBackArrow(RGB565 color){
+            BackArrow.fillTriangle(iVec2(4, 10), iVec2(12, 2), iVec2(12, 18), color, color);
+            BackArrow.fillRect(iVec2(13, 8), iVec2(9, 5), color);
+            BackArrow.fillTriangle(iVec2(22, 8), iVec2(22, 13), iVec2(27, 13), color, color);
+
+            BackArrow.fillRect(iVec2(23, 14), iVec2(5, 7), color);
+            BackArrow.fillTriangle(iVec2(27, 21), iVec2(22, 21), iVec2(22, 26), color, color);
+            
+            BackArrow.fillRect(iVec2(10, 22), iVec2(12, 5), color);
+        }
 
         // //Simple Box with outline.
         // static void createRectMenuItem(Image<RGB565>* im, RGB565 outerColor, RGB565 innerColor, int w, int h, int strokeWidth){

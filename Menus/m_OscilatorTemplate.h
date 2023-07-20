@@ -32,20 +32,34 @@ class m_OscilatorTemplate : public Menu {
         const int TRANSITION_MAX = 700;
         const double TRANSITION_RATE = 1.20;
 
-        int Item1PosX = 64;
+        int Item1PosX = 22;
         int Item2PosX = 220;
         int Item3PosX = 256;
-        int Item1PosY = 135;
+        int Item1PosY = 218;
         int Item2PosY = 80;
         int Item3PosY = 135;
+        int Dial1PosX = 40;
+        int Dial2PosX = 160;
+        int Dial3PosX = 280;
+        int Dial1PosY = 160;
+        int Dial2PosY = 200;
+        int Dial3PosY = 160;
         
-        int Item1Scale = 4;
+        int Item1Scale = 2;
         int Item2Scale = 2;
         int Item3Scale = 4;
+        float Dial1Scale = 1.25;
+        float Dial2Scale = 1.5;
+        float Dial3Scale = 1.25;
 
         int Item1Rotation = 45;
         int Item2Rotation = 45;
         int Item3Rotation = 45;
+        float Dial1Rotation = 0;
+        float Dial2Rotation = 0;
+        float Dial3Rotation = 0;
+
+        String oscString;
 
         Menu* TransitionMenu1;
         Menu* TransitionMenu2;
@@ -61,7 +75,10 @@ class m_OscilatorTemplate : public Menu {
         MenuItem Item3 = {};
 
         void Draw(){
-            mainImage->fillScreenHGradient(RGB565_Black, col3);
+            mainImage->fillScreen(RGB565_Black);
+            
+            CreateImage::placeText(mainImage, ("OSCILATOR " + oscString), iVec2(160, 30), RGB565_White, font_Roboto_Bold_36, 1.0);
+
             int x = -(int)(millis() * WAVE_SPEED) % WaveDisplay.lx();
             WaveDisplay.blitScaledRotated(WaveImage, fVec2(0, 0), fVec2(x, 0), 1.0F, 0.0F, 1.0F);
             //Serial.println(Dial1);
@@ -70,7 +87,13 @@ class m_OscilatorTemplate : public Menu {
             CreateImage::placeText(mainImage, "Wave Shape", iVec2(140, 67), RGB565_White, font_Roboto_Bold_14, 1.0);
             mainImage->blit(WaveDisplay, 100, 80);
 
-            mainImage->blitScaledRotated(Item2.image, fVec2(Item1.image.width()/2, Item1.image.height()/2), fVec2(Item2PosX, Item2PosY), Item2Scale, Item2Rotation);
+            mainImage->blitScaledRotated(Item1.image, fVec2(Item1.image.width()/2, Item1.image.height()/2), fVec2(Item1PosX, Item1PosY), Item1Scale, Item1Rotation);
+            mainImage->blitScaledRotatedMasked(CreateImage::BackArrow, RGB565_Black, fVec2(CreateImage::BackArrow.width()/2, CreateImage::BackArrow.height()/2), fVec2(Item1PosX, Item1PosY), 1, 0, 1.0);
+            mainImage->blitScaledRotated(Item2.image, fVec2(Item2.image.width()/2, Item2.image.height()/2), fVec2(Item2PosX, Item2PosY), Item2Scale, Item2Rotation);
+
+            mainImage->blitScaledRotatedMasked(CreateImage::Dial, RGB565_Black, fVec2(CreateImage::Dial.lx()/2.0, CreateImage::Dial.ly()/2.0), fVec2(Dial1PosX, Dial1PosY), Dial1Scale, Dial1Rotation, 1.0);
+            mainImage->blitScaledRotatedMasked(CreateImage::Dial, RGB565_Black, fVec2(CreateImage::Dial.lx()/2.0, CreateImage::Dial.ly()/2.0), fVec2(Dial2PosX, Dial2PosY), Dial2Scale, Dial2Rotation, 1.0);
+            mainImage->blitScaledRotatedMasked(CreateImage::Dial, RGB565_Black, fVec2(CreateImage::Dial.lx()/2.0, CreateImage::Dial.ly()/2.0), fVec2(Dial3PosX, Dial3PosY), Dial3Scale, Dial3Rotation, 1.0);
         }
 
         void CreateSineWaveImage(){
@@ -165,9 +188,11 @@ class m_OscilatorTemplate : public Menu {
             switch (OscControl){
                 case 0:
                     Osc = &Synth->osc_0;
+                    oscString = "0";
                     break;
                 case 1:
                     Osc = &Synth->osc_1;
+                    oscString = "1";
                     break;
                 default:
                     break;
@@ -208,6 +233,8 @@ class m_OscilatorTemplate : public Menu {
             CreateImage::updateAltRectMenuItem(col2, col1);
             CreateImage::updateTransitionIn(col1);
             CreateImage::updateTransitionOut(TransitionColor());
+            CreateImage::updateDialMenuItem(col1, col2);
+            CreateImage::updateBackArrow(col1);
         }
         void Setup(RGB565 TransitionINColor){
             selectWave(Osc->type);
@@ -216,6 +243,8 @@ class m_OscilatorTemplate : public Menu {
             CreateImage::updateAltRectMenuItem(col2, col1);
             CreateImage::updateTransitionIn(col1);
             CreateImage::updateTransitionOut(TransitionColor());
+            CreateImage::updateDialMenuItem(col1, col2);
+            CreateImage::updateBackArrow(col1);
         }
 
         //The flag for if the TransitionIN should Happen.
@@ -242,7 +271,17 @@ class m_OscilatorTemplate : public Menu {
             bool B1IsJustReleased, bool B2IsJustReleased, bool B3IsJustReleased,
             int Dial1, int Dial2, int Dial3
         ){
-            //B1Pressed ? Item1.image = CreateImage::AltItem : Item1.image = CreateImage::Item;
+            Dial1Rotation = 300*(Dial1/1024.0) - 210;
+            Dial2Rotation = 300*(Dial2/1024.0) - 210;
+            Dial3Rotation = 300*(Dial3/1024.0) - 210;
+
+            if(B1Pressed){
+                Item1.image = CreateImage::AltItem;
+                CreateImage::updateBackArrow(col2);
+            } else{
+                Item1.image = CreateImage::Item;
+                CreateImage::updateBackArrow(col1);
+            }
             B2Pressed ? Item2.image = CreateImage::AltItem : Item2.image = CreateImage::Item;
             //B3Pressed ? Item3.image = CreateImage::AltItem : Item3.image = CreateImage::Item;
 
@@ -254,25 +293,21 @@ class m_OscilatorTemplate : public Menu {
                 selectWave(Osc->type);
             }
 
-            // if(TransitionButton == 0 && TransitioningMenu == nullptr) {
-            //     TransitionButton = B1IsJustReleased << 2 | B2IsJustReleased << 1 | B3IsJustReleased;
-            //     if(TransitionButton != 0) {
-            //         //transitionOUTFlag = true;
-            //          //Serial.println(TransitionButton);
-            //         if(TransitionButton == 0b100){
-            //             Serial.println("Button 1 Released... Activating Transition for Button 1");
-            //             TransitioningMenu = TransitionMenu1;
-            //         }
-            //         else if (TransitionButton == 0b010){
-            //             Serial.println("Button 2 Released... Activating Transition for Button 2");
-                        
-            //         }
-            //         else if (TransitionButton == 0b001){
-            //             Serial.println("Button 3 Released... Activating Transition for Button 3");
-            //             TransitioningMenu = TransitionMenu3;
-            //         }     
-            //     }
-            // }
+            if(TransitionButton == 0 && TransitioningMenu == nullptr) {
+                TransitionButton = B1IsJustReleased << 2; //| B3IsJustReleased;
+                if(TransitionButton != 0) {
+                    transitionOUTFlag = true;
+                    //Serial.println(TransitionButton);
+                    if(TransitionButton == 0b100){
+                        Serial.println("Button 1 Released... Activating Transition for Button 1");
+                        TransitioningMenu = TransitionMenu1;
+                    }
+                    // else if (TransitionButton == 0b001){
+                    //     Serial.println("Button 3 Released... Activating Transition for Button 3");
+                    //     TransitioningMenu = TransitionMenu3;
+                    // }     
+                }
+            }
         }
 
         //The flag for if the TransitionOUT should happen.
@@ -286,7 +321,19 @@ class m_OscilatorTemplate : public Menu {
         //Once the "Back button" is Pressed then released, TransitionOUT will be called every frame until it's done.
         //Will implicitly stop drawing if it is done Transitioning out.
         void TransitionOUT(){
+            if(TransitionScale > TRANSITION_MAX){
+                mainImage->fillScreen(TransitionColor());
+                Serial.println("Transition to ... Done.");
+                transitionOUTDone = true;
+            }
 
+            if(!transitionOUTDone){
+                if(TransitionButton >> 2){
+                    Draw();
+                    mainImage->blitScaledRotated(CreateImage::TransitionOut, fVec2(CreateImage::TransitionOut.width()/2, CreateImage::TransitionOut.height()/2), fVec2(Item1.pos.x, Item1.pos.y), TransitionScale, 45);
+                    TransitionScale *= TRANSITION_RATE;
+                }
+            }
         }
         
         //The Transition OUT color of the current menu INTO the next menu.

@@ -271,5 +271,6 @@ class m_Oscilators : public Menu {
             transitionOUTDone = false;
             TransitionButton = 0;
             TransitioningMenu = nullptr;
+            TransitionScale = 1;
         }
 };

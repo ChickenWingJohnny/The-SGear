@@ -288,6 +288,7 @@ class s_Synthesizer {
             }
         }
 
+        //Updates type of selected oscilator
         void updateType(int type, int oscilator){
             switch (oscilator)
             {
@@ -322,8 +323,6 @@ class s_Synthesizer {
             return ( (float) bend / 0x1FFF );
         }
 
-        //WE NEED A MIDI THINGY HERE.
-        //Function Name TBD, actually plays the sound.
         void AddNote(byte pitch){
             notes[notesFull] = pitch;
 

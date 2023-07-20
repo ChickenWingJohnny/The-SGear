@@ -100,7 +100,9 @@ void setup() {
   Serial.println("Linking Menus...");
   MainMenu.Link(&SignalGenerator, &MainMenu, &MainMenu);
   SignalGenerator.Link(&MainMenu, &Oscilators, &SignalGenerator);
-  Oscilators.Link(&Oscilator0, &SignalGenerator, &Oscilator0);
+  Oscilators.Link(&Oscilator0, &SignalGenerator, &Oscilator1);
+  Oscilator0.Link(&Oscilators, nullptr, nullptr);
+  Oscilator1.Link(&Oscilators, nullptr, nullptr);
   Serial.println("Menus Linked!");
 
   Serial.println("Setting up Screen...");

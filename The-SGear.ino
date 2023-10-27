@@ -2,6 +2,7 @@
 #include <tgx.h>
 #include <Bounce2.h>
 #include <font_Roboto_Bold.h>
+#include <Audio.h>
 
 #include <MIDI.h>
 
@@ -105,6 +106,11 @@ void setup() {
   Oscilator1.Link(&Oscilators, nullptr, nullptr);
   Serial.println("Menus Linked!");
 
+  Serial.println("Starting up the Audio");
+  AudioMemory(20);
+  Synth.Setup();
+  Serial.println("Audio Done!");
+
   Serial.println("Setting up Screen...");
   setUpScreen();
   Serial.println("Screen Set up!");
@@ -131,13 +137,11 @@ void setup() {
   
   //Initializing the Main loop.
   Serial.println("initializing Current Menu...");
-  CurrentMenu = &Oscilator0;
+  CurrentMenu = &MainMenu;
   CurrentMenu->Setup();
   TimeTransOUTDone = millis();
   Transition_Color = CurrentMenu->TransitionColor();
 
-  AudioMemory(20);
-  Synth.Setup();
 
   Serial.println("Done!!");
   Serial.println("Beginnning Main Loop.");
@@ -193,7 +197,7 @@ void updateDials(){
   Dial2Value = -analogRead(DIAL2);
   Dial3Value = -analogRead(DIAL3);
 
-  Serial.println(Dial1Value);
+  //Serial.println(Dial1Value);
 }
 
 void updateScreen(){
@@ -248,16 +252,19 @@ void updateScreen(){
 void MIDI_NoteOn(byte channel, byte pitch, byte velocity){
   // Serial.print("Added ");
   // Serial.println(pitch);
+  
   if(21 <= pitch && pitch <= 108) Synth.AddNote(pitch);
 }
 void MIDI_NoteOff(byte channel, byte pitch, byte velocity){
   // Serial.print("Removed ");
   // Serial.println(pitch);
+  
   if(21 <= pitch && pitch <= 108) Synth.RemoveNote(pitch);
 }
 void MIDI_PitchBend(byte channel, int bend){
-  Serial.print("Bend ");
-  Serial.println(bend);
+  // Serial.print("Bend ");
+  // Serial.println(bend);
+  
   Synth.bend = bend;
 }
 void MIDI_ControlChange(byte channel, byte control, byte value){

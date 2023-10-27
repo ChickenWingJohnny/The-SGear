@@ -6,8 +6,8 @@
 #include <SD.h>
 #include <SerialFlash.h>
 
-#define MAX_VOLUME      0.01
-#define MAX_AMPLITUDE   0.01
+#define MAX_VOLUME      1
+#define MAX_AMPLITUDE   0.05 //THIS is the one we need to worry abt
 #define MAX_NOTE_PLAY   4
 #define MAX_NOTE_BUFFER 8
 
@@ -75,7 +75,6 @@ class s_Synthesizer {
         //Audio Output
         AudioOutputI2S i2s;           //xy=1220.2222061157227,228.00001335144043
 
-        
         AudioConnection patchCord1 = AudioConnection(OSC0_0, 0, OSC0_MIXER, 0);
         AudioConnection patchCord2 = AudioConnection(OSC1_0, 0, OSC0_MIXER, 1);
         AudioConnection patchCord3 = AudioConnection(OSC0_MIXER, ADSR_AMPLITUDE_0);
@@ -100,13 +99,9 @@ class s_Synthesizer {
         // AudioConnection patchCord6 = AudioConnection(HIGH_PASS_FILTER, 2, LOW_PASS_FILTER, 0);
         // AudioConnection patchCord8 = AudioConnection(LOW_PASS_FILTER, 0, i2s, 0);
 
-        
-
         AudioConnection patchCord20 = AudioConnection(OSC_MIXER, 0, i2s, 0);
         AudioConnection patchCord21 = AudioConnection(OSC_MIXER, 0, i2s, 1);
-
-        
-        
+ 
         AudioControlSGTL5000 sgtl5000;     //xy=73.66674041748047,288.6666536331177
         // GUItool: end automatically generated code
 
@@ -138,9 +133,6 @@ class s_Synthesizer {
         int release = 25;          //in ms
 
         s_Synthesizer(){
-            sgtl5000.enable();
-            sgtl5000.volume(MAX_VOLUME);
-
             osc_0.level = 0.50;
             osc_0.octave = 0;
             osc_0.type = WAVEFORM_SQUARE;
@@ -152,6 +144,9 @@ class s_Synthesizer {
 
         //Sets up the Synthesizer
         void Setup(){
+            sgtl5000.enable();
+            sgtl5000.volume(MAX_VOLUME);
+
             OSC0_0.begin(osc_0.type);
             OSC0_1.begin(osc_0.type);
             OSC0_2.begin(osc_0.type);
@@ -161,14 +156,14 @@ class s_Synthesizer {
             OSC0_2.amplitude(MAX_AMPLITUDE);
             OSC0_3.amplitude(MAX_AMPLITUDE);
 
-            // OSC1_0.begin(osc_1.type);
-            // OSC1_1.begin(osc_1.type);
-            // OSC1_2.begin(osc_1.type);
-            // OSC1_3.begin(osc_1.type);
-            // OSC1_0.amplitude(MAX_AMPLITUDE);
-            // OSC1_1.amplitude(MAX_AMPLITUDE);
-            // OSC1_2.amplitude(MAX_AMPLITUDE);
-            // OSC1_3.amplitude(MAX_AMPLITUDE);
+            OSC1_0.begin(osc_1.type);
+            OSC1_1.begin(osc_1.type);
+            OSC1_2.begin(osc_1.type);
+            OSC1_3.begin(osc_1.type);
+            OSC1_0.amplitude(MAX_AMPLITUDE);
+            OSC1_1.amplitude(MAX_AMPLITUDE);
+            OSC1_2.amplitude(MAX_AMPLITUDE);
+            OSC1_3.amplitude(MAX_AMPLITUDE);
 
             ADSR_AMPLITUDE_0.attack(attack);
             ADSR_AMPLITUDE_0.decay(decay);
@@ -207,27 +202,27 @@ class s_Synthesizer {
             int notePosOffset = 0;
             if(notesFull > MAX_NOTE_PLAY) notePosOffset = notesFull-3;
 
-            // OSC0_MIXER.gain(0, osc_0.level);
-            // OSC0_MIXER.gain(1, osc_1.level);
-            // OSC1_MIXER.gain(0, osc_0.level);
-            // OSC1_MIXER.gain(1, osc_1.level);
-            // OSC2_MIXER.gain(0, osc_0.level);
-            // OSC2_MIXER.gain(1, osc_1.level);
-            // OSC3_MIXER.gain(0, osc_0.level);
-            // OSC3_MIXER.gain(1, osc_1.level);
+            OSC0_MIXER.gain(0, osc_0.level);
+            OSC0_MIXER.gain(1, osc_1.level);
+            OSC1_MIXER.gain(0, osc_0.level);
+            OSC1_MIXER.gain(1, osc_1.level);
+            OSC2_MIXER.gain(0, osc_0.level);
+            OSC2_MIXER.gain(1, osc_1.level);
+            OSC3_MIXER.gain(0, osc_0.level);
+            OSC3_MIXER.gain(1, osc_1.level);
 
             //Update Type of Oscilators
             if(osc_0.type != Osc0PrevType) updateType(osc_0.type, 0);
             if(osc_1.type != Osc1PrevType) updateType(osc_1.type, 1);
 
             //Attempt to normalize waves :)
-            double gainFactor = 1.0/notesFull;
-            if(notesFull > 0){
-                OSC_MIXER.gain(0, gainFactor);
-                OSC_MIXER.gain(1, gainFactor);
-                OSC_MIXER.gain(2, gainFactor);
-                OSC_MIXER.gain(3, gainFactor);
-            }
+            // double gainFactor = 1.0/notesFull;
+            // if(notesFull > 0){
+            //     OSC_MIXER.gain(0, gainFactor);
+            //     // OSC_MIXER.gain(1, gainFactor);
+            //     // OSC_MIXER.gain(2, gainFactor);
+            //     // OSC_MIXER.gain(3, gainFactor);
+            // }
 
             if(notes[0 + notePosOffset] != 0){
                 OSC0_0.frequency(
@@ -244,6 +239,7 @@ class s_Synthesizer {
                     ) 
                 );
             }
+
             if(notes[1 + notePosOffset] != 0){
                 OSC0_1.frequency(
                     getFrequency( notes[1 + notePosOffset] 
@@ -294,16 +290,16 @@ class s_Synthesizer {
             {
                 case 0:
                     OSC0_0.begin(type);
-                    OSC0_1.begin(type);
-                    OSC0_2.begin(type);
-                    OSC0_3.begin(type);
+                    // OSC0_1.begin(type);
+                    // OSC0_2.begin(type);
+                    // OSC0_3.begin(type);
                     Osc0PrevType = type;
                     break;
                 case 1:
                     OSC1_0.begin(type);
-                    OSC1_1.begin(type);
-                    OSC1_2.begin(type);
-                    OSC1_3.begin(type);
+                    // OSC1_1.begin(type);
+                    // OSC1_2.begin(type);
+                    // OSC1_3.begin(type);
                     Osc1PrevType = type;
                     break;
                 default:
@@ -337,7 +333,8 @@ class s_Synthesizer {
                 if(!note0Active){
                     ADSR_AMPLITUDE_0.noteOn();
                     note0Active = true;
-                } else if(!note1Active){
+                } 
+                else if(!note1Active){
                     ADSR_AMPLITUDE_1.noteOn();
                     note1Active = true;
                 } else if(!note2Active){
@@ -358,8 +355,8 @@ class s_Synthesizer {
 
             notesFull++;
 
-            // Serial.print("Notes Full: ");
-            // Serial.println(notesFull);
+            Serial.print("Notes Full: ");
+            Serial.println(notesFull);
         }
         void RemoveNote(byte pitch){
             int i = 0;
@@ -424,12 +421,12 @@ class s_Synthesizer {
                 }
             }
 
-            // Serial.print("OSCS Active: ");
-            // if(note0Active) Serial.print("0 ");
-            // if(note1Active) Serial.print("1 ");
-            // if(note2Active) Serial.print("2 ");
-            // if(note3Active) Serial.print("3 ");
-            // Serial.println();
+            Serial.print("OSCS Active: ");
+            if(note0Active) Serial.print("0 ");
+            if(note1Active) Serial.print("1 ");
+            if(note2Active) Serial.print("2 ");
+            if(note3Active) Serial.print("3 ");
+            Serial.println();
         }
 
         void SavePreset(){

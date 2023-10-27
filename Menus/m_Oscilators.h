@@ -151,15 +151,19 @@ class m_Oscilators : public Menu {
 
         //Instantiates everything inside the menu. Pre-draws the images, and stores the TransitionINColor.
         void Setup(){
-            Osc0Type = Synth->osc_0.type;
-            Osc1Type = Synth->osc_1.type;
+            if(Synth != nullptr){
+                Osc0Type = Synth->osc_0.type;
+                Osc1Type = Synth->osc_1.type;
+            }
             CreateImage::updateRectMenuItem(col1, col2);
             CreateImage::updateAltRectMenuItem(col2, col1);
             CreateImage::updateDialMenuItem(col1, col2);
         }
         void Setup(RGB565 TransitionINColor){
-            Osc0Type = Synth->osc_0.type;
-            Osc1Type = Synth->osc_1.type;
+            if(Synth != nullptr){
+                Osc0Type = Synth->osc_0.type;
+                Osc1Type = Synth->osc_1.type;
+            }
             CreateImage::updateRectMenuItem(col1, col2);
             CreateImage::updateAltRectMenuItem(col2, col1);
             CreateImage::updateDialMenuItem(col1, col2);

@@ -15,11 +15,9 @@ class m_OscilatorTemplate : public Menu {
         s_Synthesizer* Synth;
         Oscilator* Osc;
 
-        uint16_t wave[240 * 60]; //Actual resolution is 120 x 60
-        uint16_t wave_display[120 * 60]; //Actual resolution is 120 x 60
+        uint16_t wave_display[120 * 60]; //We'll be scrolling a static wave image across this "Display"
         uint16_t transition_in[2*2];
 
-        Image<RGB565> WaveImage;
         Image<RGB565> WaveDisplay;
 
         bool transitionINFlag = true;
@@ -80,7 +78,7 @@ class m_OscilatorTemplate : public Menu {
             CreateImage::placeText(mainImage, ("OSCILATOR " + oscString), iVec2(160, 30), RGB565_White, font_Roboto_Bold_36, 1.0);
 
             int x = -(int)(millis() * WAVE_SPEED) % WaveDisplay.lx();
-            WaveDisplay.blitScaledRotated(WaveImage, fVec2(0, 0), fVec2(x, 0), 1.0F, 0.0F, 1.0F);
+            WaveDisplay.blitScaledRotated(CreateImage::WaveImage1, fVec2(0, 0), fVec2(x, 0), 1.0F, 0.0F, 1.0F);
             //Serial.println(Dial1);
             mainImage->fillRect(iVec2(77, 57), iVec2(166, 96), col1);
             mainImage->fillRect(iVec2(80, 60), iVec2(160, 90), col2);
@@ -96,82 +94,20 @@ class m_OscilatorTemplate : public Menu {
             mainImage->blitScaledRotatedMasked(CreateImage::Dial, RGB565_Black, fVec2(CreateImage::Dial.lx()/2.0, CreateImage::Dial.ly()/2.0), fVec2(Dial3PosX, Dial3PosY), Dial3Scale, Dial3Rotation, 1.0);
         }
 
-        void CreateSineWaveImage(){
-            WaveImage.fillScreen(col2);
-            for(int s = 2; s > -2; s--){
-                for(int x = 0; x < WaveImage.lx(); x++){
-                    int y = (int)(28 * sin(((double)1/60) * PI * (double) x));
-                    WaveImage.drawPixel(x, 28+y+s, col1);
-                }
-            }
-        }
-        void CreateSquareWaveImage(){
-            WaveImage.fillScreen(col2);
-            RGB565 lineColor = col1;
-            int period = 30;
-            for(int i = 0; i < 8; i++){
-                WaveImage.drawFastVLine(iVec2((period*i)-1, 0), 60, lineColor);
-                WaveImage.drawFastVLine(iVec2((period*i), 0), 60, lineColor);
-                WaveImage.drawFastVLine(iVec2((period*i)+1, 0), 60, lineColor);
-                if(i%2){
-                    WaveImage.drawFastHLine(iVec2((period*i), 0), period, lineColor);
-                    WaveImage.drawFastHLine(iVec2((period*i), 1), period, lineColor);
-                    WaveImage.drawFastHLine(iVec2((period*i), 2), period, lineColor);
-                }
-                else{
-                    WaveImage.drawFastHLine(iVec2((period*i), 58), period, lineColor);
-                    WaveImage.drawFastHLine(iVec2((period*i), 59), period, lineColor);
-                    WaveImage.drawFastHLine(iVec2((period*i), 60), period, lineColor);
-                }
-            }
-            WaveImage.drawFastVLine(iVec2(240-1, 0), 60, lineColor);
-            WaveImage.drawFastVLine(iVec2(240, 0), 60, lineColor);
-            WaveImage.drawFastVLine(iVec2(240+1, 0), 60, lineColor);
-        }
-        void CreateTriangleWaveImage(){
-            WaveImage.fillScreen(col2);
-            int period = 30;
-            for(int i = 0; i < 8; i+=2){
-                WaveImage.drawLine(iVec2((period*i)-1, 60), iVec2(period*(i+1)-1, 0), col1);
-                WaveImage.drawLine(iVec2((period*i), 60), iVec2(period*(i+1), 0), col1);
-                WaveImage.drawLine(iVec2((period*i)+1, 60), iVec2(period*(i+1)+1, 0), col1);
-
-                WaveImage.drawLine(iVec2((period*(i+1))-1, 0), iVec2(period*(i+2)-1, 60), col1);
-                WaveImage.drawLine(iVec2((period*(i+1)), 0), iVec2(period*(i+2), 60), col1);
-                WaveImage.drawLine(iVec2((period*(i+1))+1, 0), iVec2(period*(i+2)+1, 60), col1);
-            }
-        }
-        void CreateSawtoothWaveImage(){
-            //Sawtooth Reverse can be made by flipping this image.
-            WaveImage.fillScreen(col2);
-            int period = 60;
-            for(int i = 0; i < 4; i++){
-                WaveImage.drawLine(iVec2((period*i)-1, 60), iVec2(period*(i+1)-1, 0), col1);
-                WaveImage.drawLine(iVec2((period*i), 60), iVec2(period*(i+1), 0), col1);
-                WaveImage.drawLine(iVec2((period*i)+1, 60), iVec2(period*(i+1)+1, 0), col1);
-
-                WaveImage.drawFastVLine(iVec2((period*(i+1)-1), 0), 60, col1);
-                WaveImage.drawFastVLine(iVec2((period*(i+1)), 0), 60, col1);
-                WaveImage.drawFastVLine(iVec2((period*(i+1)+1), 0), 60, col1);
-            }
-        }
-        void CreateArbitraryWaveImage(){
-            
-        }
         void selectWave(int type){
             switch (type)
             {
                 case WAVEFORM_SINE:
-                    CreateSineWaveImage();
+                    CreateImage::updateSineWaveImage1(col2, col1);
                     break;
                 case WAVEFORM_SQUARE:
-                    CreateSquareWaveImage();
+                    CreateImage::updateSquareWaveImage1(col2, col1);
                     break;
                 case WAVEFORM_TRIANGLE:
-                    CreateTriangleWaveImage();
+                    CreateImage::updateTriangleWaveImage1(col2, col1);
                     break;
                 case WAVEFORM_SAWTOOTH:
-                    CreateSawtoothWaveImage();
+                    CreateImage::updateSawtoothWaveImage1(col2, col1);
                 default:
                     break;
             }
@@ -182,7 +118,6 @@ class m_OscilatorTemplate : public Menu {
             mainImage = im;
             Synth = s;
 
-            WaveImage = Image<RGB565>(wave, 240, 60);
             WaveDisplay = Image<RGB565>(wave_display, 120, 60);
 
             switch (OscControl){

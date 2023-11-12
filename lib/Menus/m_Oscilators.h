@@ -7,10 +7,18 @@
 
 using namespace tgx;
 
+#define WAVE_SPEED         0.03 //Pixels per ms
+
 class m_Oscilators : public Menu {
     private:
         Image<RGB565>* mainImage;
         s_Synthesizer* Synth;
+
+        uint16_t wave_display1[60 * 30]; //We'll be scrolling a static wave image across this "Display"
+        uint16_t wave_display2[60 * 30]; //We'll be scrolling a static wave image across this "Display"
+
+        Image<RGB565> WaveDisplay1;
+        Image<RGB565> WaveDisplay2;
 
         int Item1PosX = 100;
         int Item1PosY = 120;
@@ -117,14 +125,68 @@ class m_Oscilators : public Menu {
             mainImage->blitScaledRotatedMasked(CreateImage::BackArrow, RGB565_Black, fVec2(CreateImage::BackArrow.width()/2, CreateImage::BackArrow.height()/2), fVec2(Item2PosX, Item2PosY), 1, 0, 1.0);
             mainImage->blitScaledRotated(Item3.image, fVec2(Item3.size.x/2.0, Item3.size.y/2.0), fVec2(Item3.pos.x, Item3.pos.y), Item3.scale, Item3.rot);
 
+            //Waves
+            int x = -(int)(millis() * WAVE_SPEED) % WaveDisplay1.lx(); //They are both the same width.
+            WaveDisplay1.blitScaledRotated(CreateImage::WaveImage1, fVec2(0, 0), fVec2(x, 0), 0.5F, 0.0F, 1.0F);
+            WaveDisplay2.blitScaledRotated(CreateImage::WaveImage2, fVec2(0, 0), fVec2(x, 0), 0.5F, 0.0F, 1.0F);
+
+            mainImage->blit(WaveDisplay1, Item1.pos.x-30, Item1.pos.y-15);
+            mainImage->blit(WaveDisplay2, Item3.pos.x-30, Item3.pos.y-15);
+
+            //Text
+            CreateImage::placeText(mainImage, "OSCILATOR 1", iVec2(Item1.pos.x-30, Item1.pos.y-75), RGB32_White, font_Roboto_Bold_18, 1.0);
+            CreateImage::placeText(mainImage, "OSCILATOR 2", iVec2(Item3.pos.x+30, Item1.pos.y-75), RGB32_White, font_Roboto_Bold_18, 1.0);
+
+            //Dials
             mainImage->blitScaledRotatedMasked(CreateImage::Dial, RGB565_Black, fVec2(CreateImage::Dial.lx()/2.0, CreateImage::Dial.ly()/2.0), fVec2(Dial1PosX, Dial1PosY), Dial1Scale, Dial1Rotation, 1.0);
             mainImage->blitScaledRotatedMasked(CreateImage::Dial, RGB565_Black, fVec2(CreateImage::Dial.lx()/2.0, CreateImage::Dial.ly()/2.0), fVec2(Dial3PosX, Dial3PosY), Dial3Scale, Dial3Rotation, 1.0);
+        }
+
+        void selectWave1(int type, bool flipColors){
+            switch (type)
+            {
+                case WAVEFORM_SINE:
+                    flipColors ? CreateImage::updateSineWaveImage1(col1, col2) : CreateImage::updateSineWaveImage1(col2, col1);
+                    break;
+                case WAVEFORM_SQUARE:
+                    flipColors ? CreateImage::updateSquareWaveImage1(col1, col2) : CreateImage::updateSquareWaveImage1(col2, col1);
+                    break;
+                case WAVEFORM_TRIANGLE:
+                    flipColors ? CreateImage::updateTriangleWaveImage1(col1, col2) : CreateImage::updateTriangleWaveImage1(col2, col1);
+                    break;
+                case WAVEFORM_SAWTOOTH:
+                    flipColors ? CreateImage::updateSawtoothWaveImage1(col1, col2) : CreateImage::updateSawtoothWaveImage1(col2, col1);
+                default:
+                    break;
+            }
+        }
+
+        void selectWave2(int type, bool flipColors){
+            switch (type)
+            {
+                case WAVEFORM_SINE:
+                    flipColors ? CreateImage::updateSineWaveImage2(col1, col2) : CreateImage::updateSineWaveImage2(col2, col1);
+                    break;
+                case WAVEFORM_SQUARE:
+                    flipColors ? CreateImage::updateSquareWaveImage2(col1, col2) : CreateImage::updateSquareWaveImage2(col2, col1);
+                    break;
+                case WAVEFORM_TRIANGLE:
+                    flipColors ? CreateImage::updateTriangleWaveImage2(col1, col2) : CreateImage::updateTriangleWaveImage2(col2, col1);
+                    break;
+                case WAVEFORM_SAWTOOTH:
+                    flipColors ? CreateImage::updateSawtoothWaveImage2(col1, col2) : CreateImage::updateSawtoothWaveImage2(col2, col1);
+                default:
+                    break;
+            }
         }
 
     public:
         m_Oscilators(Image<RGB565>* im, s_Synthesizer* s){
             mainImage = im;
             Synth = s;
+
+            WaveDisplay1 = Image<RGB565>(wave_display1, 60, 30);
+            WaveDisplay2 = Image<RGB565>(wave_display2, 60, 30);
 
             Item1.image = CreateImage::Item;
             Item2.image = CreateImage::Item;
@@ -163,6 +225,9 @@ class m_Oscilators : public Menu {
             CreateImage::updateAltRectMenuItem(col2, col1);
             CreateImage::updateDialMenuItem(col1, col2);
             CreateImage::updateBackArrow(col1);
+
+            selectWave1(Osc0Type, false);
+            selectWave2(Osc1Type, false);
         }
         void Setup(RGB565 TransitionINColor){
             if(Synth != nullptr){
@@ -173,6 +238,8 @@ class m_Oscilators : public Menu {
             CreateImage::updateAltRectMenuItem(col2, col1);
             CreateImage::updateDialMenuItem(col1, col2);
             CreateImage::updateBackArrow(col1);
+            selectWave1(Osc0Type, false);
+            selectWave2(Osc1Type, false);
         }
 
         //The flag for if the TransitionIN should Happen.
@@ -197,15 +264,31 @@ class m_Oscilators : public Menu {
             Dial1Rotation = 300*(Dial1/1024.0) - 210;
             Dial3Rotation = 300*(Dial3/1024.0) - 210;
 
-            B1Pressed ? Item1.image = CreateImage::AltItem : Item1.image = CreateImage::Item;
+            if(B1Pressed){
+                Item1.image = CreateImage::AltItem; 
+                selectWave1(Osc0Type, true);
+
+            } else if(B1IsJustReleased){
+                Item1.image = CreateImage::Item;
+                selectWave1(Osc0Type, false);
+            }
+
             if(B2Pressed){
                 Item2.image = CreateImage::AltItem;
                 CreateImage::updateBackArrow(col2);
-            } else{
+            } else if(B2IsJustReleased){
                 Item2.image = CreateImage::Item;
                 CreateImage::updateBackArrow(col1);
             }
-            B3Pressed ? Item3.image = CreateImage::AltItem : Item3.image = CreateImage::Item;
+
+            if(B3Pressed){
+                Item3.image = CreateImage::AltItem; 
+                selectWave2(Osc1Type, true);
+
+            } else if(B3IsJustReleased){
+                Item3.image = CreateImage::Item;
+                selectWave2(Osc1Type, false);
+            }
 
             Draw();
 

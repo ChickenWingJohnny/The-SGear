@@ -17,6 +17,8 @@ namespace CreateImage {
         uint16_t transition_in[2*2];
         uint16_t transition_out[2*2];
         uint16_t back_arrow[32*32];
+        uint16_t wave1[240 * 60];
+        uint16_t wave2[240 * 60];
     }
         Image<RGB565> Item = Image<RGB565>(item, 16, 16);
         Image<RGB565> AltItem = Image<RGB565>(alt_item, 16, 16);
@@ -26,6 +28,8 @@ namespace CreateImage {
         Image<RGB565> TransitionIn = Image<RGB565>(transition_in, 2, 2);
         Image<RGB565> TransitionOut = Image<RGB565>(transition_out, 2, 2);
         Image<RGB565> BackArrow = Image<RGB565>(back_arrow, 32, 32);
+        Image<RGB565> WaveImage1 = Image<RGB565>(wave1, 240, 60);
+        Image<RGB565> WaveImage2 = Image<RGB565>(wave2, 240, 60);
 
         //Simple Box with outline.
         void updateRectMenuItem(RGB565 outerColor, RGB565 innerColor){
@@ -111,6 +115,131 @@ namespace CreateImage {
             im->fillScreen(outerColor);
             im->fillRect(strokeWidth, strokeWidth, im->lx() - (2*strokeWidth), im->ly() - (2*strokeWidth), innerColor);
             placeText(im, text, iVec2(im->lx()/2, im->ly()/2), textColor, font, 1.0);
+        }
+
+
+        static void updateSineWaveImage1(RGB565 BackgroundColor, RGB565 LineColor){
+            WaveImage1.fillScreen(BackgroundColor);
+            for(int s = 2; s > -2; s--){
+                for(int x = 0; x < WaveImage1.lx(); x++){
+                    int y = (int)(28 * sin(((double)1/60) * PI * (double) x));
+                    WaveImage1.drawPixel(x, 28+y+s, LineColor);
+                }
+            }
+        }
+        static void updateSquareWaveImage1(RGB565 BackgroundColor, RGB565 LineColor){
+            WaveImage1.fillScreen(BackgroundColor);
+            int period = 30;
+            for(int i = 0; i < 8; i++){
+                WaveImage1.drawFastVLine(iVec2((period*i)-1, 0), 60, LineColor);
+                WaveImage1.drawFastVLine(iVec2((period*i), 0), 60, LineColor);
+                WaveImage1.drawFastVLine(iVec2((period*i)+1, 0), 60, LineColor);
+                if(i%2){
+                    WaveImage1.drawFastHLine(iVec2((period*i), 0), period, LineColor);
+                    WaveImage1.drawFastHLine(iVec2((period*i), 1), period, LineColor);
+                    WaveImage1.drawFastHLine(iVec2((period*i), 2), period, LineColor);
+                }
+                else{
+                    WaveImage1.drawFastHLine(iVec2((period*i), 58), period, LineColor);
+                    WaveImage1.drawFastHLine(iVec2((period*i), 59), period, LineColor);
+                    WaveImage1.drawFastHLine(iVec2((period*i), 60), period, LineColor);
+                }
+            }
+            WaveImage1.drawFastVLine(iVec2(240-1, 0), 60, LineColor);
+            WaveImage1.drawFastVLine(iVec2(240, 0), 60, LineColor);
+            WaveImage1.drawFastVLine(iVec2(240+1, 0), 60, LineColor);
+        }
+        static void updateTriangleWaveImage1(RGB565 BackgroundColor, RGB565 LineColor){
+            WaveImage1.fillScreen(BackgroundColor);
+            int period = 30;
+            for(int i = 0; i < 8; i+=2){
+                WaveImage1.drawLine(iVec2((period*i)-1, 60), iVec2(period*(i+1)-1, 0), LineColor);
+                WaveImage1.drawLine(iVec2((period*i), 60), iVec2(period*(i+1), 0), LineColor);
+                WaveImage1.drawLine(iVec2((period*i)+1, 60), iVec2(period*(i+1)+1, 0), LineColor);
+
+                WaveImage1.drawLine(iVec2((period*(i+1))-1, 0), iVec2(period*(i+2)-1, 60), LineColor);
+                WaveImage1.drawLine(iVec2((period*(i+1)), 0), iVec2(period*(i+2), 60), LineColor);
+                WaveImage1.drawLine(iVec2((period*(i+1))+1, 0), iVec2(period*(i+2)+1, 60), LineColor);
+            }
+        }
+        static void updateSawtoothWaveImage1(RGB565 BackgroundColor, RGB565 LineColor){
+            //Sawtooth Reverse can be made by flipping this image.
+            WaveImage1.fillScreen(BackgroundColor);
+            int period = 60;
+            for(int i = 0; i < 4; i++){
+                WaveImage1.drawLine(iVec2((period*i)-1, 60), iVec2(period*(i+1)-1, 0), LineColor);
+                WaveImage1.drawLine(iVec2((period*i), 60), iVec2(period*(i+1), 0), LineColor);
+                WaveImage1.drawLine(iVec2((period*i)+1, 60), iVec2(period*(i+1)+1, 0), LineColor);
+
+                WaveImage1.drawFastVLine(iVec2((period*(i+1)-1), 0), 60, LineColor);
+                WaveImage1.drawFastVLine(iVec2((period*(i+1)), 0), 60, LineColor);
+                WaveImage1.drawFastVLine(iVec2((period*(i+1)+1), 0), 60, LineColor);
+            }
+        }
+        static void updateArbitraryWaveImage1(){
+            
+        }
+
+        static void updateSineWaveImage2(RGB565 BackgroundColor, RGB565 LineColor){
+            WaveImage2.fillScreen(BackgroundColor);
+            for(int s = 2; s > -2; s--){
+                for(int x = 0; x < WaveImage2.lx(); x++){
+                    int y = (int)(28 * sin(((double)1/60) * PI * (double) x));
+                    WaveImage2.drawPixel(x, 28+y+s, LineColor);
+                }
+            }
+        }
+        static void updateSquareWaveImage2(RGB565 BackgroundColor, RGB565 LineColor){
+            WaveImage2.fillScreen(BackgroundColor);
+            int period = 30;
+            for(int i = 0; i < 8; i++){
+                WaveImage2.drawFastVLine(iVec2((period*i)-1, 0), 60, LineColor);
+                WaveImage2.drawFastVLine(iVec2((period*i), 0), 60, LineColor);
+                WaveImage2.drawFastVLine(iVec2((period*i)+1, 0), 60, LineColor);
+                if(i%2){
+                    WaveImage2.drawFastHLine(iVec2((period*i), 0), period, LineColor);
+                    WaveImage2.drawFastHLine(iVec2((period*i), 1), period, LineColor);
+                    WaveImage2.drawFastHLine(iVec2((period*i), 2), period, LineColor);
+                }
+                else{
+                    WaveImage2.drawFastHLine(iVec2((period*i), 58), period, LineColor);
+                    WaveImage2.drawFastHLine(iVec2((period*i), 59), period, LineColor);
+                    WaveImage2.drawFastHLine(iVec2((period*i), 60), period, LineColor);
+                }
+            }
+            WaveImage2.drawFastVLine(iVec2(240-1, 0), 60, LineColor);
+            WaveImage2.drawFastVLine(iVec2(240, 0), 60, LineColor);
+            WaveImage2.drawFastVLine(iVec2(240+1, 0), 60, LineColor);
+        }
+        static void updateTriangleWaveImage2(RGB565 BackgroundColor, RGB565 LineColor){
+            WaveImage2.fillScreen(BackgroundColor);
+            int period = 30;
+            for(int i = 0; i < 8; i+=2){
+                WaveImage2.drawLine(iVec2((period*i)-1, 60), iVec2(period*(i+1)-1, 0), LineColor);
+                WaveImage2.drawLine(iVec2((period*i), 60), iVec2(period*(i+1), 0), LineColor);
+                WaveImage2.drawLine(iVec2((period*i)+1, 60), iVec2(period*(i+1)+1, 0), LineColor);
+
+                WaveImage2.drawLine(iVec2((period*(i+1))-1, 0), iVec2(period*(i+2)-1, 60), LineColor);
+                WaveImage2.drawLine(iVec2((period*(i+1)), 0), iVec2(period*(i+2), 60), LineColor);
+                WaveImage2.drawLine(iVec2((period*(i+1))+1, 0), iVec2(period*(i+2)+1, 60), LineColor);
+            }
+        }
+        static void updateSawtoothWaveImage2(RGB565 BackgroundColor, RGB565 LineColor){
+            //Sawtooth Reverse can be made by flipping this image.
+            WaveImage2.fillScreen(BackgroundColor);
+            int period = 60;
+            for(int i = 0; i < 4; i++){
+                WaveImage2.drawLine(iVec2((period*i)-1, 60), iVec2(period*(i+1)-1, 0), LineColor);
+                WaveImage2.drawLine(iVec2((period*i), 60), iVec2(period*(i+1), 0), LineColor);
+                WaveImage2.drawLine(iVec2((period*i)+1, 60), iVec2(period*(i+1)+1, 0), LineColor);
+
+                WaveImage2.drawFastVLine(iVec2((period*(i+1)-1), 0), 60, LineColor);
+                WaveImage2.drawFastVLine(iVec2((period*(i+1)), 0), 60, LineColor);
+                WaveImage2.drawFastVLine(iVec2((period*(i+1)+1), 0), 60, LineColor);
+            }
+        }
+        static void updateArbitraryWaveImage(){
+            
         }
 
 }

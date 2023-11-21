@@ -7,8 +7,7 @@
 #include <SerialFlash.h>
 
 #define MAX_VOLUME      1
-#define MAX_AMPLITUDE   0.05 //THIS is the one we need to worry abt
-#define MAX_NOTE_PLAY   4
+#define MAX_AMPLITUDE   0.1 //THIS is the one we need to worry abt
 #define MAX_NOTE_BUFFER 8
 
 struct Oscilator {
@@ -38,35 +37,47 @@ struct Oscilator {
     bool state = true;
 };
 
+//struct Note
+//Stores both oscilators, its mixer, and adsr.
+struct Note {
+    AudioSynthWaveformModulated osc0;
+    AudioSynthWaveformModulated osc1;
+
+    AudioMixer4 mixer;
+    AudioEffectEnvelope adsr;
+
+    //Store the original pitch of the note. (0-127)
+    byte pitch = 0;
+
+    public: 
+        void adjustLevel(double l0, double l1){
+            mixer.gain(0, l0);
+            mixer.gain(1, l1);
+        }
+
+        void adjustADSR(int a, int d, double s, int r){
+            adsr.attack(a);
+            adsr.decay(d);
+            adsr.sustain(s);
+            adsr.release(r);
+        }
+};
+
+
+
 class s_Synthesizer {
-    private:     
+    private:
+        //Circular Array of notes
+        Note notes[MAX_NOTE_BUFFER];
+        int notesFull = 0;
+        int onIndex = 0; //Should always be ahead of, or equal to off index.
+
         AudioSynthWaveformSine LFO_MODULATION;          //xy=126.99996185302734,222.00000381469727
 
-        //2 Diiferent oscilators, but with 4 note capacities.
-        AudioSynthWaveformModulated OSC0_0;
-        AudioSynthWaveformModulated OSC0_1;
-        AudioSynthWaveformModulated OSC0_2;
-        AudioSynthWaveformModulated OSC0_3;
-
-        AudioSynthWaveformModulated OSC1_0;
-        AudioSynthWaveformModulated OSC1_1;
-        AudioSynthWaveformModulated OSC1_2;
-        AudioSynthWaveformModulated OSC1_3;
-
-        //Volume Envelope
-        AudioEffectEnvelope ADSR_AMPLITUDE_0;
-        AudioEffectEnvelope ADSR_AMPLITUDE_1;
-        AudioEffectEnvelope ADSR_AMPLITUDE_2;      
-        AudioEffectEnvelope ADSR_AMPLITUDE_3;         
-
-        //Mixers for the OSC's Notes
-        AudioMixer4 OSC0_MIXER;
-        AudioMixer4 OSC1_MIXER;
-        AudioMixer4 OSC2_MIXER;
-        AudioMixer4 OSC3_MIXER;
-
         //Final Mixer
-        AudioMixer4 OSC_MIXER;
+        AudioMixer4 MIXER1;
+        AudioMixer4 MIXER2;
+        AudioMixer4 FINAL_MIXER;
 
         //Filters in order.
         AudioFilterStateVariable HIGH_PASS_FILTER;
@@ -75,71 +86,95 @@ class s_Synthesizer {
         //Audio Output
         AudioOutputI2S i2s;           //xy=1220.2222061157227,228.00001335144043
 
-        AudioConnection patchCord1 = AudioConnection(OSC0_0, 0, OSC0_MIXER, 0);
-        AudioConnection patchCord2 = AudioConnection(OSC1_0, 0, OSC0_MIXER, 1);
-        AudioConnection patchCord3 = AudioConnection(OSC0_MIXER, ADSR_AMPLITUDE_0);
-        AudioConnection patchCord4 = AudioConnection(OSC0_1, 0, OSC1_MIXER, 0);
-        AudioConnection patchCord5 = AudioConnection(OSC1_1, 0, OSC1_MIXER, 1);
-        AudioConnection patchCord6 = AudioConnection(OSC1_MIXER, ADSR_AMPLITUDE_1);
-        AudioConnection patchCord7 = AudioConnection(OSC0_2, 0, OSC2_MIXER, 0);
-        AudioConnection patchCord8 = AudioConnection(OSC1_2, 0, OSC2_MIXER, 1);
-        AudioConnection patchCord9 = AudioConnection(OSC2_MIXER, ADSR_AMPLITUDE_2);
-        AudioConnection patchCord10 = AudioConnection(OSC0_3, 0, OSC3_MIXER, 0);
-        AudioConnection patchCord11 = AudioConnection(OSC1_3, 0, OSC3_MIXER, 1);
-        AudioConnection patchCord12 = AudioConnection(OSC3_MIXER, ADSR_AMPLITUDE_3);
+        //Create Patch Cords connecting each of the notes in the array to its own mixer and adsr.
+        //There should be a more efficent way of doing this...
+        AudioConnection patchCord1 = AudioConnection(notes[0].osc0, 0, notes[0].mixer, 0);
+        AudioConnection patchCord2 = AudioConnection(notes[0].osc1, 0, notes[0].mixer, 1);
+        AudioConnection patchCord3 = AudioConnection(notes[0].mixer, notes[0].adsr);
+        AudioConnection patchCord4 = AudioConnection(notes[1].osc0, 0, notes[1].mixer, 0);
+        AudioConnection patchCord5 = AudioConnection(notes[1].osc1, 0, notes[1].mixer, 1);
+        AudioConnection patchCord6 = AudioConnection(notes[1].mixer, notes[1].adsr);
+        AudioConnection patchCord7 = AudioConnection(notes[2].osc0, 0, notes[2].mixer, 0);
+        AudioConnection patchCord8 = AudioConnection(notes[2].osc1, 0, notes[2].mixer, 1);
+        AudioConnection patchCord9 = AudioConnection(notes[2].mixer, notes[2].adsr);
+        AudioConnection patchCord10 = AudioConnection(notes[3].osc0, 0, notes[3].mixer, 0);
+        AudioConnection patchCord11 = AudioConnection(notes[3].osc1, 0, notes[3].mixer, 1);
+        AudioConnection patchCord12 = AudioConnection(notes[3].mixer, notes[3].adsr);
+        AudioConnection patchCord13 = AudioConnection(notes[4].osc0, 0, notes[4].mixer, 0);
+        AudioConnection patchCord14 = AudioConnection(notes[4].osc1, 0, notes[4].mixer, 1);
+        AudioConnection patchCord15 = AudioConnection(notes[4].mixer, notes[4].adsr);
+        AudioConnection patchCord16 = AudioConnection(notes[5].osc0, 0, notes[5].mixer, 0);
+        AudioConnection patchCord17 = AudioConnection(notes[5].osc1, 0, notes[5].mixer, 1);
+        AudioConnection patchCord18 = AudioConnection(notes[5].mixer, notes[5].adsr);
+        AudioConnection patchCord19 = AudioConnection(notes[6].osc0, 0, notes[6].mixer, 0);
+        AudioConnection patchCord20 = AudioConnection(notes[6].osc1, 0, notes[6].mixer, 1);
+        AudioConnection patchCord21 = AudioConnection(notes[6].mixer, notes[6].adsr);
+        AudioConnection patchCord22 = AudioConnection(notes[7].osc0, 0, notes[7].mixer, 0);
+        AudioConnection patchCord23 = AudioConnection(notes[7].osc1, 0, notes[7].mixer, 1);
+        AudioConnection patchCord24 = AudioConnection(notes[7].mixer, notes[7].adsr);
 
-        AudioConnection patchCord13 = AudioConnection(ADSR_AMPLITUDE_0, 0, OSC_MIXER, 0);
-        AudioConnection patchCord14 = AudioConnection(ADSR_AMPLITUDE_1, 0, OSC_MIXER, 1);
-        AudioConnection patchCord15 = AudioConnection(ADSR_AMPLITUDE_2, 0, OSC_MIXER, 2);
-        AudioConnection patchCord16 = AudioConnection(ADSR_AMPLITUDE_3, 0, OSC_MIXER, 3);
+        AudioConnection PatchCord31 = AudioConnection(notes[0].adsr, 0, MIXER1, 0);
+        AudioConnection PatchCord32 = AudioConnection(notes[1].adsr, 0, MIXER1, 1);
+        AudioConnection PatchCord33 = AudioConnection(notes[2].adsr, 0, MIXER1, 2);
+        AudioConnection PatchCord34 = AudioConnection(notes[3].adsr, 0, MIXER1, 3);
+        AudioConnection PatchCord35 = AudioConnection(notes[4].adsr, 0, MIXER2, 0);
+        AudioConnection PatchCord36 = AudioConnection(notes[5].adsr, 0, MIXER2, 1);
+        AudioConnection PatchCord37 = AudioConnection(notes[6].adsr, 0, MIXER2, 2);
+        AudioConnection PatchCord38 = AudioConnection(notes[7].adsr, 0, MIXER2, 3);
 
-        // AudioConnection patchCord1 = AudioConnection(LFO_MODULATION, 0, OSC1, 0);
-        // AudioConnection patchCord2 = AudioConnection(LFO_MODULATION, 0, OSC2, 0);
-        // AudioConnection patchCord5 = AudioConnection(OSC_MIXER, 0, HIGH_PASS_FILTER, 0);
-        // AudioConnection patchCord6 = AudioConnection(HIGH_PASS_FILTER, 2, LOW_PASS_FILTER, 0);
-        // AudioConnection patchCord8 = AudioConnection(LOW_PASS_FILTER, 0, i2s, 0);
+        //Attach LFO to each oscilator
+        AudioConnection patchCord40 = AudioConnection(LFO_MODULATION, 0, notes[0].osc0, 0);
+        AudioConnection patchCord41 = AudioConnection(LFO_MODULATION, 0, notes[0].osc1, 0);
+        AudioConnection patchCord42 = AudioConnection(LFO_MODULATION, 0, notes[1].osc0, 0);
+        AudioConnection patchCord43 = AudioConnection(LFO_MODULATION, 0, notes[1].osc1, 0);
+        AudioConnection patchCord44 = AudioConnection(LFO_MODULATION, 0, notes[2].osc0, 0);
+        AudioConnection patchCord45 = AudioConnection(LFO_MODULATION, 0, notes[2].osc1, 0);
+        AudioConnection patchCord46 = AudioConnection(LFO_MODULATION, 0, notes[3].osc0, 0);
+        AudioConnection patchCord47 = AudioConnection(LFO_MODULATION, 0, notes[3].osc1, 0);
+        AudioConnection patchCord48 = AudioConnection(LFO_MODULATION, 0, notes[4].osc0, 0);
+        AudioConnection patchCord49 = AudioConnection(LFO_MODULATION, 0, notes[4].osc1, 0);
+        AudioConnection patchCord50 = AudioConnection(LFO_MODULATION, 0, notes[5].osc0, 0);
+        AudioConnection patchCord51 = AudioConnection(LFO_MODULATION, 0, notes[5].osc1, 0);
+        AudioConnection patchCord52 = AudioConnection(LFO_MODULATION, 0, notes[6].osc0, 0);
+        AudioConnection patchCord53 = AudioConnection(LFO_MODULATION, 0, notes[6].osc1, 0);
+        AudioConnection patchCord54 = AudioConnection(LFO_MODULATION, 0, notes[7].osc0, 0);
+        AudioConnection patchCord55 = AudioConnection(LFO_MODULATION, 0, notes[7].osc1, 0);
 
-        AudioConnection patchCord20 = AudioConnection(OSC_MIXER, 0, i2s, 0);
-        AudioConnection patchCord21 = AudioConnection(OSC_MIXER, 0, i2s, 1);
+        AudioConnection patchCord61 = AudioConnection(MIXER1, 0, FINAL_MIXER, 0);
+        AudioConnection patchCord62 = AudioConnection(MIXER2, 0, FINAL_MIXER, 1);
+        AudioConnection patchCord63 = AudioConnection(FINAL_MIXER, 0, HIGH_PASS_FILTER, 0);
+        AudioConnection patchCord64 = AudioConnection(HIGH_PASS_FILTER, 2, LOW_PASS_FILTER, 0);
+        AudioConnection patchCord65 = AudioConnection(LOW_PASS_FILTER, 0, i2s, 0);
+        AudioConnection patchCord66 = AudioConnection(LOW_PASS_FILTER, 0, i2s, 1);
  
-        AudioControlSGTL5000 sgtl5000;     //xy=73.66674041748047,288.6666536331177
+        AudioControlSGTL5000 sgtl5000;  
         // GUItool: end automatically generated code
 
-        
     public:
         //Representatives of the main oscilators.
         //Directly access these to change aspects about the oscilators
         Oscilator osc_0;
-        bool note0Active = false;
-        bool note1Active = false;
-        bool note2Active = false;
-        bool note3Active = false;
         Oscilator osc_1;
 
         int Osc0PrevType = 2;
         int Osc1PrevType = 1;
-        
-
-        //Store at most 8 notes, play at most 3, in hz.
-        byte notes[MAX_NOTE_BUFFER];
-        int notesFull = 0;
 
         int bend;
         int bendRange = 2;
 
-        int attack = 25;           //in ms
-        int decay = 25;            //in ms
-        double sustain = 0.8;       //from 0.0 - 1.0
-        int release = 25;          //in ms
+        int attack = 100;           //in ms
+        int decay = 100;            //in ms
+        double sustain = 0.75;       //from 0.0 - 1.0
+        int release = 100;          //in ms
 
         s_Synthesizer(){
-            osc_0.level = 0.50;
+            osc_0.level = 0.4;
             osc_0.octave = 0;
-            osc_0.type = WAVEFORM_SQUARE;
+            osc_0.type = WAVEFORM_TRIANGLE;
 
-            osc_1.level = 0.50;
+            osc_1.level = 0.6;
             osc_1.octave = -2;
-            osc_1.type = WAVEFORM_SAWTOOTH;
+            osc_1.type = WAVEFORM_SINE;
         }
 
         //Sets up the Synthesizer
@@ -147,159 +182,85 @@ class s_Synthesizer {
             sgtl5000.enable();
             sgtl5000.volume(MAX_VOLUME);
 
-            OSC0_0.begin(osc_0.type);
-            OSC0_1.begin(osc_0.type);
-            OSC0_2.begin(osc_0.type);
-            OSC0_3.begin(osc_0.type);
-            OSC0_0.amplitude(MAX_AMPLITUDE);
-            OSC0_1.amplitude(MAX_AMPLITUDE);
-            OSC0_2.amplitude(MAX_AMPLITUDE);
-            OSC0_3.amplitude(MAX_AMPLITUDE);
+            updateType(osc_0.type, 0);
+            updateType(osc_1.type, 1);
 
-            OSC1_0.begin(osc_1.type);
-            OSC1_1.begin(osc_1.type);
-            OSC1_2.begin(osc_1.type);
-            OSC1_3.begin(osc_1.type);
-            OSC1_0.amplitude(MAX_AMPLITUDE);
-            OSC1_1.amplitude(MAX_AMPLITUDE);
-            OSC1_2.amplitude(MAX_AMPLITUDE);
-            OSC1_3.amplitude(MAX_AMPLITUDE);
+            for (int i = 0; i < MAX_NOTE_BUFFER; i++)
+            {
+                notes[i].osc0.amplitude(MAX_AMPLITUDE);
+                notes[i].osc1.amplitude(MAX_AMPLITUDE);
+            }
 
-            ADSR_AMPLITUDE_0.attack(attack);
-            ADSR_AMPLITUDE_0.decay(decay);
-            ADSR_AMPLITUDE_0.sustain(sustain);
-            ADSR_AMPLITUDE_0.release(release);
-            ADSR_AMPLITUDE_1.attack(attack);
-            ADSR_AMPLITUDE_1.decay(decay);
-            ADSR_AMPLITUDE_1.sustain(sustain);
-            ADSR_AMPLITUDE_1.release(release);
-            ADSR_AMPLITUDE_2.attack(attack);
-            ADSR_AMPLITUDE_2.decay(decay);
-            ADSR_AMPLITUDE_2.sustain(sustain);
-            ADSR_AMPLITUDE_2.release(release);
-            ADSR_AMPLITUDE_3.attack(attack);
-            ADSR_AMPLITUDE_3.decay(decay);
-            ADSR_AMPLITUDE_3.sustain(sustain);
-            ADSR_AMPLITUDE_3.release(release);
+            updateADSR(attack, decay, sustain, release);
+            updateLevel(osc_0.level, osc_1.level);
 
-            OSC0_MIXER.gain(0, osc_0.level);
-            OSC0_MIXER.gain(1, osc_1.level);
-            OSC1_MIXER.gain(0, osc_0.level);
-            OSC1_MIXER.gain(1, osc_1.level);
-            OSC2_MIXER.gain(0, osc_0.level);
-            OSC2_MIXER.gain(1, osc_1.level);
-            OSC3_MIXER.gain(0, osc_0.level);
-            OSC3_MIXER.gain(1, osc_1.level);
+            MIXER1.gain(0, 1.0);
+            MIXER1.gain(1, 1.0);
+            MIXER1.gain(2, 1.0);
+            MIXER1.gain(3, 1.0);
 
-            OSC_MIXER.gain(0, 1.00);
-            OSC_MIXER.gain(1, 1.00);
-            OSC_MIXER.gain(2, 1.00);
-            OSC_MIXER.gain(3, 1.00);
+            MIXER2.gain(0, 1.0);
+            MIXER2.gain(1, 1.0);
+            MIXER2.gain(2, 1.0);
+            MIXER2.gain(3, 1.0);
+
+            FINAL_MIXER.gain(0, 0.5);
+            FINAL_MIXER.gain(1, 0.5);
+
+            LFO_MODULATION.phase(0);
+            LFO_MODULATION.frequency(0);
+
+            LOW_PASS_FILTER.frequency(10000);
+            LOW_PASS_FILTER.resonance(5.0);
+            HIGH_PASS_FILTER.frequency(15.625);
+            HIGH_PASS_FILTER.resonance(5.0);
         }
 
         //Main Update loop of the Oscilators
         void Play(){
-            int notePosOffset = 0;
-            if(notesFull > MAX_NOTE_PLAY) notePosOffset = notesFull-3;
-
-            OSC0_MIXER.gain(0, osc_0.level);
-            OSC0_MIXER.gain(1, osc_1.level);
-            OSC1_MIXER.gain(0, osc_0.level);
-            OSC1_MIXER.gain(1, osc_1.level);
-            OSC2_MIXER.gain(0, osc_0.level);
-            OSC2_MIXER.gain(1, osc_1.level);
-            OSC3_MIXER.gain(0, osc_0.level);
-            OSC3_MIXER.gain(1, osc_1.level);
+            updateLevel(osc_0.level, osc_1.level);
 
             //Update Type of Oscilators
             if(osc_0.type != Osc0PrevType) updateType(osc_0.type, 0);
             if(osc_1.type != Osc1PrevType) updateType(osc_1.type, 1);
 
-            //Attempt to normalize waves :)
-            // double gainFactor = 1.0/notesFull;
-            // if(notesFull > 0){
-            //     OSC_MIXER.gain(0, gainFactor);
-            //     // OSC_MIXER.gain(1, gainFactor);
-            //     // OSC_MIXER.gain(2, gainFactor);
-            //     // OSC_MIXER.gain(3, gainFactor);
-            // }
+            //Try to Attempt to normalize waves :)
 
-            if(notes[0 + notePosOffset] != 0){
-                OSC0_0.frequency(
-                    getFrequency( notes[0 + notePosOffset] 
-                        + (osc_0.octave * 12)
-                        + osc_0.detune 
+            //Iterate through array, for each note which state is on, Update the Frequency.
+            for(int i = 0; i < MAX_NOTE_BUFFER; i++){
+                if(notes[i].adsr.isActive()){
+                    notes[i].osc0.frequency(
+                        getFrequency( notes[i].pitch 
+                        + (osc_0.octave * 12) 
+                        + osc_0.detune
                         + (getBend()*bendRange) ) 
-                );
-                OSC1_0.frequency( 
-                    getFrequency( notes[0 + notePosOffset] 
-                    + (osc_1.octave * 12) 
-                    + osc_1.detune
-                    + (getBend()*bendRange) 
-                    ) 
-                );
-            }
-
-            if(notes[1 + notePosOffset] != 0){
-                OSC0_1.frequency(
-                    getFrequency( notes[1 + notePosOffset] 
-                    + (osc_0.octave * 12) 
-                    + osc_0.detune
-                    + (getBend()*bendRange) ) 
-                );
-                OSC1_1.frequency( 
-                    getFrequency( notes[1 + notePosOffset] 
-                    + (osc_1.octave * 12) 
-                    + osc_1.detune
-                    + (getBend()*bendRange) ) 
-                );
-            }
-            if(notes[2 + notePosOffset] != 0){
-                OSC0_2.frequency(
-                    getFrequency( notes[2 + notePosOffset] 
-                    + (osc_0.octave * 12)
-                    + osc_0.detune 
-                    + (getBend()*bendRange) ) 
-                );
-                OSC1_2.frequency( 
-                    getFrequency( notes[2 + notePosOffset] 
-                    + (osc_1.octave * 12)
-                    + osc_1.detune 
-                    + (getBend()*bendRange) ) 
-                );
-            }
-            if(notes[3 + notePosOffset] != 0){
-                OSC0_3.frequency(
-                    getFrequency( notes[3 + notePosOffset] 
-                    + (osc_0.octave * 12)
-                    + osc_0.detune 
-                    + (getBend()*bendRange) ) 
-                );
-                OSC1_3.frequency( 
-                    getFrequency( notes[3 + notePosOffset] 
-                    + (osc_1.octave * 12)
-                    + osc_1.detune 
-                    + (getBend()*bendRange) ) 
-                );
+                    );
+                    notes[i].osc1.frequency( 
+                        getFrequency( notes[i].pitch 
+                        + (osc_1.octave * 12) 
+                        + osc_1.detune
+                        + (getBend()*bendRange) ) 
+                    );
+                }
             }
         }
-
+        
         //Updates type of selected oscilator
         void updateType(int type, int oscilator){
             switch (oscilator)
             {
                 case 0:
-                    OSC0_0.begin(type);
-                    // OSC0_1.begin(type);
-                    // OSC0_2.begin(type);
-                    // OSC0_3.begin(type);
+                    for (int i = 0; i < MAX_NOTE_BUFFER; i++)
+                    {
+                        notes[i].osc0.begin(type);
+                    }
                     Osc0PrevType = type;
                     break;
                 case 1:
-                    OSC1_0.begin(type);
-                    // OSC1_1.begin(type);
-                    // OSC1_2.begin(type);
-                    // OSC1_3.begin(type);
+                    for (int i = 0; i < MAX_NOTE_BUFFER; i++)
+                    {
+                        notes[i].osc1.begin(type);
+                    }
                     Osc1PrevType = type;
                     break;
                 default:
@@ -307,7 +268,29 @@ class s_Synthesizer {
             }
         }
         void updateADSR(int attack, int decay, double sustain, int release){
-            
+            for (int i = 0; i < MAX_NOTE_BUFFER; i++)
+            {
+                notes[i].adjustADSR(attack, decay, sustain, release);
+            }
+        }
+        void updateLevel(double level0, double level1){
+            for(int i = 0; i < MAX_NOTE_BUFFER; i++){
+                notes[i].adjustLevel(level0, level1);
+            }
+        }
+        void updateLowPassFilterFrequency(float freq){
+            freq = max(freq, 2.0f); //we don't want the frequency to be 0.
+            LOW_PASS_FILTER.frequency(10000 * freq / 127);
+        }
+        void updateLowPassFilterResonance(float Q){
+            LOW_PASS_FILTER.resonance((4.3 * Q / 127) + 0.7);
+        }
+        void updateHighPassFilterFrequency(float freq){
+            freq = max(freq, 2.0f); //we don't want the frequency to be 0.
+            HIGH_PASS_FILTER.frequency(10000 * (1 - (freq / 127)) );
+        }
+        void updateHighPassFilterResonance(float Q){
+            HIGH_PASS_FILTER.resonance((4.3 * Q / 127) + 0.7);
         }
 
         //MIDI note to Frequency
@@ -320,113 +303,71 @@ class s_Synthesizer {
         }
 
         void AddNote(byte pitch){
-            notes[notesFull] = pitch;
+            //Find a note with a state that's off.
+            while(notes[onIndex].adsr.isActive() && notesFull < MAX_NOTE_BUFFER){
+                Serial.println("Finding note...");
+                onIndex = (onIndex + 1) % MAX_NOTE_BUFFER;
+            }
+            //If the array is full, replace the first note.
+            notes[onIndex].pitch = pitch;
+            notes[onIndex].adsr.noteOn();
+
+            //Wheh the array is full and then empties, wacky things happen, find a fix eventually!
 
             Serial.print("Added - ");
-            for(byte note : notes){
-                Serial.print(note);
+            for(Note note : notes){
+                if(note.adsr.isActive())
+                    Serial.print(note.pitch);
+                else
+                    Serial.print("X");
                 Serial.print(" ");
             }
             Serial.println();
 
-            if(notesFull < MAX_NOTE_PLAY){
-                if(!note0Active){
-                    ADSR_AMPLITUDE_0.noteOn();
-                    note0Active = true;
-                } 
-                else if(!note1Active){
-                    ADSR_AMPLITUDE_1.noteOn();
-                    note1Active = true;
-                } else if(!note2Active){
-                    ADSR_AMPLITUDE_2.noteOn();
-                    note2Active = true;
-                } else if(!note3Active){
-                    ADSR_AMPLITUDE_3.noteOn();
-                    note3Active = true;
-                }
-            }
-            
-            // Serial.print("OSCS Active: ");
-            // if(note0Active) Serial.print("0 ");
-            // if(note1Active) Serial.print("1 ");
-            // if(note2Active) Serial.print("2 ");
-            // if(note3Active) Serial.print("3 ");
-            // Serial.println();
-
-            notesFull++;
+            onIndex = (onIndex + 1) % MAX_NOTE_BUFFER;
+            notesFull = min(notesFull+1, MAX_NOTE_BUFFER);
 
             Serial.print("Notes Full: ");
             Serial.println(notesFull);
         }
         void RemoveNote(byte pitch){
-            int i = 0;
-            //Find where in buffer the pitch is
-            while(i < MAX_NOTE_BUFFER){
-                if(notes[i] == pitch) break;
-                i++;
-            }
-            //Remove it from notes, and turn off the correct ADSR
-            notes[i] = 0;
+            
+            //Find where in buffer the pitch(es) are
+            for (int i = 0; i < MAX_NOTE_BUFFER; i++){
+                //If the pitch is found, and the note is on, turn it off.
+                if(notes[i].pitch == pitch && notes[i].adsr.isActive()) {
+                    //Remove it from notes, and turn off the correct ADSR
+                    notes[i].adsr.noteOff();
 
-            // Serial.print("Removed - ");
-            // for(byte note : notes){
-            //     Serial.print(note);
-            //     Serial.print(" ");
-            // }
-            // Serial.println();
+                    Serial.print("Removed - ");
+                    for(Note note : notes){
+                        if(note.adsr.isSustain())
+                            Serial.print(note.pitch);
+                        else
+                            Serial.print("X");
+                        Serial.print(" ");
+                    }
+                    Serial.println();
 
-            //And shift the rest back.
-            notesFull--;
-            while(i < (MAX_NOTE_BUFFER - 1) && notes[i+1] != 0){
-                notes[i] = notes[i+1];
-                i++;
-                notes[i] = 0;
-            }
+                    notesFull--;
 
-            // Serial.print("Shifted - ");
-            // for(byte note : notes){
-            //     Serial.print(note);
-            //     Serial.print(" ");
-            // }
-            // Serial.println();
-
-            // Serial.print("Notes Full:");
-            // Serial.println(notesFull);
-
-            //And turn off Oscilators if applicable
-            if(notesFull < MAX_NOTE_PLAY){
-                switch (notesFull){
-                    case 0:
-                        ADSR_AMPLITUDE_0.noteOff();
-                        ADSR_AMPLITUDE_0.noteOff();
-                        note0Active = false;
-                        break;
-                    case 1:
-                        ADSR_AMPLITUDE_1.noteOff();
-                        ADSR_AMPLITUDE_1.noteOff();
-                        note1Active = false;
-                        break;
-                    case 2:
-                        ADSR_AMPLITUDE_2.noteOff();
-                        ADSR_AMPLITUDE_2.noteOff();
-                        note2Active = false;
-                        break;
-                    case 3:
-                        ADSR_AMPLITUDE_3.noteOff();
-                        ADSR_AMPLITUDE_3.noteOff();
-                        note3Active = false;
-                        break;
-                    default:
-                        break;
+                    Serial.print("Notes Full:");
+                    Serial.println(notesFull);
                 }
             }
+        }
 
-            Serial.print("OSCS Active: ");
-            if(note0Active) Serial.print("0 ");
-            if(note1Active) Serial.print("1 ");
-            if(note2Active) Serial.print("2 ");
-            if(note3Active) Serial.print("3 ");
-            Serial.println();
+        void updateLFO(double freq, float depth){
+            //Iterate through the notes list, adjust frequencyModulation for each osilator
+            for (int i = 0; i < MAX_NOTE_BUFFER; i++)
+            {
+                notes[i].osc0.frequencyModulation(depth);
+                notes[i].osc1.frequencyModulation(depth);
+            }
+            LFO_MODULATION.frequency(freq/8.0);
+
+            if(freq == 0)
+                LFO_MODULATION.phase(0);
         }
 
         void SavePreset(){

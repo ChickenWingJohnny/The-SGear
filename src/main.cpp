@@ -273,5 +273,26 @@ void MIDI_PitchBend(byte channel, int bend){
   Synth.bend = bend;
 }
 void MIDI_ControlChange(byte channel, byte control, byte value){
+    switch (control)
+    {
+    case 1:
+      Synth.updateLFO(value, 0.083f);
+      break;
+    case 36:
+      Synth.updateLowPassFilterFrequency(value);
+      break;
+    case 37:
+      Synth.updateLowPassFilterResonance(value);
+      break;
+    case 38:
+      Synth.updateHighPassFilterFrequency(value);
+      break;
+    case 39:
+      Synth.updateHighPassFilterResonance(value);
+      break;
 
+    default:
+      break;
+    }
+    Serial.println("Control Change: " + String(control) + " " + String(value));
 }

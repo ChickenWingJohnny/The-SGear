@@ -135,11 +135,13 @@ class m_Oscilators : public Menu {
 
             //Text
             CreateImage::placeText(mainImage, "OSCILATOR 1", iVec2(Item1.pos.x-30, Item1.pos.y-75), RGB32_White, font_Roboto_Bold_18, 1.0);
-            CreateImage::placeText(mainImage, "OSCILATOR 2", iVec2(Item3.pos.x+30, Item1.pos.y-75), RGB32_White, font_Roboto_Bold_18, 1.0);
+            CreateImage::placeText(mainImage, "OSCILATOR 2", iVec2(Item3.pos.x+30, Item3.pos.y-75), RGB32_White, font_Roboto_Bold_18, 1.0);
 
             //Dials
             mainImage->blitScaledRotatedMasked(CreateImage::Dial, RGB565_Black, fVec2(CreateImage::Dial.lx()/2.0, CreateImage::Dial.ly()/2.0), fVec2(Dial1PosX, Dial1PosY), Dial1Scale, Dial1Rotation, 1.0);
             mainImage->blitScaledRotatedMasked(CreateImage::Dial, RGB565_Black, fVec2(CreateImage::Dial.lx()/2.0, CreateImage::Dial.ly()/2.0), fVec2(Dial3PosX, Dial3PosY), Dial3Scale, Dial3Rotation, 1.0);
+            CreateImage::placeText(mainImage, (String)( (Dial1Rotation + 210) /3), iVec2(Item1.pos.x+30, Item1.pos.y+75), RGB32_White, font_Roboto_Bold_18, 1.0);
+            CreateImage::placeText(mainImage, (String)( (Dial3Rotation + 210) /3), iVec2(Item3.pos.x+30, Item3.pos.y+75), RGB32_White, font_Roboto_Bold_18, 1.0);
         }
 
         void selectWave1(int type, bool flipColors){

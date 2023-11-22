@@ -5,6 +5,10 @@
 
 using namespace tgx;
 
+#define BG_CYLINDER_RADIUS 5
+#define BG_CYLINDER_BANDS 4
+#define BG_CYLINDER_MOD 60
+
 //Stores common shapes that can be used across menus.
 namespace CreateImage {
 
@@ -117,6 +121,17 @@ namespace CreateImage {
             placeText(im, text, iVec2(im->lx()/2, im->ly()/2), textColor, font, 1.0);
         }
 
+        static void drawCylinderBackground(Image<RGB565>* im, RGB565 color){
+            int timeCalled = millis();
+            for (int i = -BG_CYLINDER_BANDS/2; i <= BG_CYLINDER_BANDS*2; i++)
+            {
+                int y = (i * 240)/BG_CYLINDER_BANDS - (timeCalled/20) % BG_CYLINDER_MOD;
+
+                im->drawQuadBezier(iVec2(0,y), iVec2(320, y), iVec2(160,119), 1.0, true, color);
+                im->drawQuadBezier(iVec2(0,y), iVec2(320, y), iVec2(160,120), 1.0, true, color);
+                im->drawQuadBezier(iVec2(0,y), iVec2(320, y), iVec2(160,121), 1.0, true, color);
+            }
+        }
 
         static void updateSineWaveImage1(RGB565 BackgroundColor, RGB565 LineColor){
             WaveImage1.fillScreen(BackgroundColor);

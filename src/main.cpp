@@ -4,6 +4,7 @@
 #include <tgx.h>
 #include <Bounce2.h>
 #include <font_Roboto_Bold.h>
+#include "font_Righteous_AA2.h"
 #include <Audio.h>
 
 #include <MIDI.h>
@@ -201,18 +202,29 @@ void updateButtons(){
 }
 
 void updateDials(){
-  Dial1Value = -analogRead(DIAL1);
-  Dial2Value = -analogRead(DIAL2);
-  Dial3Value = -analogRead(DIAL3);
+  //Average the last 10 readings of the dials
+  int d1 = 0;
+  int d2 = 0;
+  int d3 = 0;
 
-  //Serial.println(Dial1Value);
+  for(int i = 0; i < 10; i++){
+    d1 -= analogRead(DIAL1);
+    d2 -= analogRead(DIAL2);
+    d3 -= analogRead(DIAL3);
+  }
+
+  Dial1Value = d1/10;
+  Dial2Value = d2/10;
+  Dial3Value = d3/10;
+
+  //Serial.println("Dial 1: " + String(Dial1Value));
 }
 
 void updateScreen(){
   // Serial.println("In Flag" + CurrentMenu->TransitionINFlag());
   // Serial.println("Out Flag" + CurrentMenu->TransitionOUTFlag());
   // Serial.println("Out Done" + CurrentMenu->TransitionOUTDone());
-  if(millis()-TimeTransOUTDone < 250){
+  if(millis()-TimeTransOUTDone < 100){
     //If you want a loading screen, have it here :)
   }
   //IF TransIN, then render TransIN.

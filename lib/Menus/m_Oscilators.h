@@ -76,7 +76,9 @@ class m_Oscilators : public Menu {
 
         void Draw(){
             //Background
-            mainImage->fillScreenVGradient(RGB565_Black, col3);
+            mainImage->fillScreenVGradient(col3, RGB32_Black);
+
+            CreateImage::drawCylinderBackground(mainImage, col1);
 
             //Lines.
             mainImage->drawFastVLine(iVec2(160-1, 0), 60, lineColor);
@@ -134,14 +136,14 @@ class m_Oscilators : public Menu {
             mainImage->blit(WaveDisplay2, Item3.pos.x-30, Item3.pos.y-15);
 
             //Text
-            CreateImage::placeText(mainImage, "OSCILATOR 1", iVec2(Item1.pos.x-30, Item1.pos.y-75), RGB32_White, font_Roboto_Bold_18, 1.0);
-            CreateImage::placeText(mainImage, "OSCILATOR 2", iVec2(Item3.pos.x+30, Item3.pos.y-75), RGB32_White, font_Roboto_Bold_18, 1.0);
+            CreateImage::placeText(mainImage, "OSCILATOR \n     1", iVec2(Item1.pos.x-25, Item1.pos.y-100), RGB32_White, font_Righteous_AA2_24, 1.0);
+            CreateImage::placeText(mainImage, "OSCILATOR \n             2", iVec2(Item3.pos.x+25, Item3.pos.y-100), RGB32_White, font_Righteous_AA2_24, 1.0);
 
             //Dials
             mainImage->blitScaledRotatedMasked(CreateImage::Dial, RGB565_Black, fVec2(CreateImage::Dial.lx()/2.0, CreateImage::Dial.ly()/2.0), fVec2(Dial1PosX, Dial1PosY), Dial1Scale, Dial1Rotation, 1.0);
             mainImage->blitScaledRotatedMasked(CreateImage::Dial, RGB565_Black, fVec2(CreateImage::Dial.lx()/2.0, CreateImage::Dial.ly()/2.0), fVec2(Dial3PosX, Dial3PosY), Dial3Scale, Dial3Rotation, 1.0);
-            CreateImage::placeText(mainImage, (String)( (Dial1Rotation + 210) /3), iVec2(Item1.pos.x+30, Item1.pos.y+75), RGB32_White, font_Roboto_Bold_18, 1.0);
-            CreateImage::placeText(mainImage, (String)( (Dial3Rotation + 210) /3), iVec2(Item3.pos.x+30, Item3.pos.y+75), RGB32_White, font_Roboto_Bold_18, 1.0);
+            CreateImage::placeText(mainImage,"Level: \n   " + String(100 + round((Dial1Rotation + 210)/3)) + "%", iVec2(Item1.pos.x-60, Item1.pos.y+45), RGB32_White, font_Righteous_AA2_24, 1.0);
+            CreateImage::placeText(mainImage,"Level: \n   " + String(100 + round((Dial3Rotation + 210)/3)) + "%", iVec2(Item3.pos.x+60, Item3.pos.y+45), RGB32_White, font_Righteous_AA2_24, 1.0);
         }
 
         void selectWave1(int type, bool flipColors){
@@ -240,6 +242,7 @@ class m_Oscilators : public Menu {
             CreateImage::updateAltRectMenuItem(col2, col1);
             CreateImage::updateDialMenuItem(col1, col2);
             CreateImage::updateBackArrow(col1);
+
             selectWave1(Osc0Type, false);
             selectWave2(Osc1Type, false);
         }
@@ -263,8 +266,13 @@ class m_Oscilators : public Menu {
             bool B1IsJustReleased, bool B2IsJustReleased, bool B3IsJustReleased,
             int Dial1, int Dial2, int Dial3
         ){
-            Dial1Rotation = 300*(Dial1/1024.0) - 210;
-            Dial3Rotation = 300*(Dial3/1024.0) - 210;
+            Dial1Rotation = 300*(Dial1/1024.0)-210;
+            Dial3Rotation = 300*(Dial3/1024.0)-210;
+
+            Synth->osc_0.level = 1 + Dial1/1024.0;
+            Synth->osc_1.level = 1 + Dial3/1024.0;
+
+            //Serial.println("Dial 1: " + String(1 + Dial1/1024.0) + " Dial 3: " + String(1 + Dial3/1024.0));
 
             if(B1Pressed){
                 Item1.image = CreateImage::AltItem; 
@@ -340,6 +348,7 @@ class m_Oscilators : public Menu {
                     mainImage->blitScaledRotated(CreateImage::TransitionOut, fVec2(CreateImage::TransitionOut.width()/2, CreateImage::TransitionOut.height()/2), fVec2(Item1.pos.x, Item1.pos.y), TransitionScale, 45);
                     TransitionScale *= TRANSITION_RATE;
                 } else if (TransitionButton >> 1) {
+                    Draw();
                     mainImage->blitScaledRotated(CreateImage::TransitionOut, fVec2(CreateImage::TransitionOut.width()/2, CreateImage::TransitionOut.height()/2), fVec2(Item2.pos.x, Item2.pos.y), TransitionScale, 45);
                     TransitionScale *= TRANSITION_RATE;
                 } else if (TransitionButton) {

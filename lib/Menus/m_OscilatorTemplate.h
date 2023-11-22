@@ -39,9 +39,9 @@ class m_OscilatorTemplate : public Menu {
         int Dial1PosX = 40;
         int Dial2PosX = 160;
         int Dial3PosX = 280;
-        int Dial1PosY = 160;
+        int Dial1PosY = 140;
         int Dial2PosY = 200;
-        int Dial3PosY = 160;
+        int Dial3PosY = 140;
         
         int Item1Scale = 2;
         int Item2Scale = 2;
@@ -73,25 +73,35 @@ class m_OscilatorTemplate : public Menu {
         MenuItem Item3 = {};
 
         void Draw(){
-            mainImage->fillScreen(RGB565_Black);
+            mainImage->fillScreenVGradient(RGB565_Black, col3);
             
-            CreateImage::placeText(mainImage, ("OSCILATOR " + oscString), iVec2(160, 30), RGB565_White, font_Roboto_Bold_36, 1.0);
+            CreateImage::placeText(mainImage, ("OSCILATOR " + oscString), iVec2(160, 30), RGB565_White, font_Righteous_AA2_36, 1.0);
 
             int x = -(int)(millis() * WAVE_SPEED) % WaveDisplay.lx();
             WaveDisplay.blitScaledRotated(CreateImage::WaveImage1, fVec2(0, 0), fVec2(x, 0), 1.0F, 0.0F, 1.0F);
-            //Serial.println(Dial1);
             mainImage->fillRect(iVec2(77, 57), iVec2(166, 96), col1);
             mainImage->fillRect(iVec2(80, 60), iVec2(160, 90), col2);
-            CreateImage::placeText(mainImage, "Wave Shape", iVec2(140, 67), RGB565_White, font_Roboto_Bold_14, 1.0);
+            CreateImage::placeText(mainImage, "Wave Shape", iVec2(140, 67), RGB565_White, font_Righteous_AA2_14, 1.0);
             mainImage->blit(WaveDisplay, 100, 80);
 
+            //Items
             mainImage->blitScaledRotated(Item1.image, fVec2(Item1.image.width()/2, Item1.image.height()/2), fVec2(Item1PosX, Item1PosY), Item1Scale, Item1Rotation);
             mainImage->blitScaledRotatedMasked(CreateImage::BackArrow, RGB565_Black, fVec2(CreateImage::BackArrow.width()/2, CreateImage::BackArrow.height()/2), fVec2(Item1PosX, Item1PosY), 1, 0, 1.0);
             mainImage->blitScaledRotated(Item2.image, fVec2(Item2.image.width()/2, Item2.image.height()/2), fVec2(Item2PosX, Item2PosY), Item2Scale, Item2Rotation);
-
+            
+            //Dials
             mainImage->blitScaledRotatedMasked(CreateImage::Dial, RGB565_Black, fVec2(CreateImage::Dial.lx()/2.0, CreateImage::Dial.ly()/2.0), fVec2(Dial1PosX, Dial1PosY), Dial1Scale, Dial1Rotation, 1.0);
             mainImage->blitScaledRotatedMasked(CreateImage::Dial, RGB565_Black, fVec2(CreateImage::Dial.lx()/2.0, CreateImage::Dial.ly()/2.0), fVec2(Dial2PosX, Dial2PosY), Dial2Scale, Dial2Rotation, 1.0);
             mainImage->blitScaledRotatedMasked(CreateImage::Dial, RGB565_Black, fVec2(CreateImage::Dial.lx()/2.0, CreateImage::Dial.ly()/2.0), fVec2(Dial3PosX, Dial3PosY), Dial3Scale, Dial3Rotation, 1.0);
+
+            CreateImage::placeText(mainImage, String(12 + round(0.24*(Dial1Rotation + 210)/3)), iVec2(Dial1PosX, Dial1PosY-40), RGB565_White, font_Righteous_AA2_24, 1.0);
+            CreateImage::placeText(mainImage, "-              +\n   detune", iVec2(Dial1PosX, Dial1PosY+20), RGB565_White, font_Righteous_AA2_12, 1.0);
+
+            CreateImage::placeText(mainImage, String(2 + round(0.04*(Dial2Rotation + 210)/3)), iVec2(Dial2PosX, Dial2PosY), RGB565_White, font_Righteous_AA2_24, 1.0);
+            CreateImage::placeText(mainImage, "octave", iVec2(Dial2PosX, Dial2PosY+30), RGB565_White, font_Righteous_AA2_12, 1.0);
+
+            CreateImage::placeText(mainImage, String(100 + round((Dial3Rotation + 210)/3)) + "%", iVec2(Dial3PosX, Dial3PosY-40), RGB565_White, font_Righteous_AA2_24, 1.0);
+            CreateImage::placeText(mainImage, "-              +\n    level", iVec2(Dial3PosX, Dial3PosY+20), RGB565_White, font_Righteous_AA2_12, 1.0);
         }
 
         void selectWave(int type){
@@ -209,6 +219,10 @@ class m_OscilatorTemplate : public Menu {
             Dial1Rotation = 300*(Dial1/1024.0) - 210;
             Dial2Rotation = 300*(Dial2/1024.0) - 210;
             Dial3Rotation = 300*(Dial3/1024.0) - 210;
+
+            Osc->detune = 12 + round(24*(Dial1/1024.0));
+            Osc->octave = 2 + round(4*(Dial2/1024.0));
+            Osc->level = 1 + Dial3/1024.0;
 
             if(B1Pressed){
                 Item1.image = CreateImage::AltItem;

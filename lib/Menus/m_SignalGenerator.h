@@ -73,7 +73,9 @@ class m_SignalGenerator : public Menu {
 
         //The Main Menu Loop Without Inputs
         void Draw(){
-            mainImage->fillScreenVGradient(RGB565_Black, col3);
+            mainImage->fillScreenVGradient(col3, RGB32_Black);
+
+            CreateImage::drawCylinderBackground(mainImage, col1);
 
             //Menu Items
             mainImage->blitScaledRotated(Item1.image, fVec2(Item1.size.x/2, Item1.size.y/2), fVec2(Item1.pos.x, Item1.pos.y), Item1.scale, Item1.rot);
@@ -144,8 +146,8 @@ class m_SignalGenerator : public Menu {
             CreateImage::updateRectMenuItem(col1, col2);
             CreateImage::updateAltRectMenuItem(col2, col1);
             CreateImage::updateDiamondMenuItem(col1, col2);
-            CreateImage::updateAltDiamondMenuItem(col2, col2);
-            CreateImage::createTextBox(&TextBox, "SIGNAL GENERATOR", 4, col2, col1, RGB565_White, font_Roboto_Bold_28);
+            CreateImage::updateAltDiamondMenuItem(col2, col1);
+            CreateImage::createTextBox(&TextBox, "SIGNAL GENERATOR", 4, col2, col1, RGB565_White, font_Righteous_AA2_28);
         }
         void Setup(RGB565 TransitionINColor){
             Serial.println("Setup m_SignalGenerator");
@@ -159,7 +161,7 @@ class m_SignalGenerator : public Menu {
             CreateImage::updateAltRectMenuItem(col2, col1);
             CreateImage::updateDiamondMenuItem(col1, col2);
             CreateImage::updateAltDiamondMenuItem(col2, col1);
-            CreateImage::createTextBox(&TextBox, "SIGNAL GENERATOR", 4, col2, col1, RGB565_White, font_Roboto_Bold_28);
+            CreateImage::createTextBox(&TextBox, "SIGNAL GENERATOR", 4, col2, col1, RGB565_White, font_Righteous_AA2_28);
         }
 
         bool TransitionINFlag(){
@@ -247,12 +249,12 @@ class m_SignalGenerator : public Menu {
                 } else if (TransitionButton >> 1) {
                     //TODO: MAKE THIS A COOL TRANSITION :)
                     if(timeElapsed < 500 && !TransitionPart2){
-                        Item3TextPos.x += (timeElapsed/150.0);
-                        Item3.pos.x += (timeElapsed/150.0);
-                        Item2TextPos.y += (timeElapsed/150.0);
-                        Item1TextPos.x -= (timeElapsed/150.0);
-                        Item1.pos.x -= (timeElapsed/150.0);
-                        TextBoxPos.y -= (timeElapsed/150.0);
+                        Item3TextPos.x += (timeElapsed/100.0);
+                        Item3.pos.x += (timeElapsed/80.0);
+                        Item2TextPos.y += (timeElapsed/100.0);
+                        Item1TextPos.x -= (timeElapsed/100.0);
+                        Item1.pos.x -= (timeElapsed/80.0);
+                        TextBoxPos.y -= (timeElapsed/100.0);
 
                         Item2.pos = iVec2(Item2PosX, 20*(-timeElapsed/1000.0) + Item2PosY);
                         Item2.rot = 180 * (timeElapsed/1000.0) + Item2Rotation;
@@ -264,7 +266,9 @@ class m_SignalGenerator : public Menu {
                         timeTransOUT = millis();
                         TransitionPart2 = true;
                     } else if (timeElapsed < 500 && TransitionPart2) {
-                        mainImage->fillScreenVGradient(RGB565_Black, col3);
+                        mainImage->fillScreenVGradient(col3, RGB32_Black);
+
+                        CreateImage::drawCylinderBackground(mainImage, col1);
 
                         int Osc0x = 60*(-timeElapsed/1000.0) + 130; //to 100 in 0.5 seconds
                         int Osc1x = 60*(timeElapsed/1000.0) + 190; //to 220 in 0.5 seconds

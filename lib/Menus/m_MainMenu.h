@@ -135,7 +135,7 @@ class m_MainMenu : public Menu {
 
             CreateImage::updateRectMenuItem(col1, col2);
             CreateImage::updateAltRectMenuItem(col2, col1);
-            CreateImage::createTextBox(&TextBox, "MAIN MENU", 4, col2, col1, RGB565_White, font_Roboto_Bold_32);
+            CreateImage::createTextBox(&TextBox, "MAIN MENU", 4, col2, col1, RGB565_White, font_Righteous_AA2_32);
         }
         void Setup(RGB565 TransitionINColor){
             Serial.println("Setup m_MainMenu");
@@ -145,7 +145,7 @@ class m_MainMenu : public Menu {
 
             CreateImage::updateRectMenuItem(col1, col2);
             CreateImage::updateAltRectMenuItem(col2, col1);
-            CreateImage::createTextBox(&TextBox, "MAIN MENU", 4, col2, col1, RGB565_White, font_Roboto_Bold_32);
+            CreateImage::createTextBox(&TextBox, "MAIN MENU", 4, col2, col1, RGB565_White, font_Righteous_AA2_32);
         }
 
         //Transition IN should ONLY be Drawn if transitionINFlag is True.

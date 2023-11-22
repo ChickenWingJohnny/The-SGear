@@ -78,7 +78,7 @@ class m_Oscilators : public Menu {
             //Background
             mainImage->fillScreenVGradient(col3, RGB32_Black);
 
-            CreateImage::drawCylinderBackground(mainImage, col1);
+            CreateImage::drawCylinderBackground(mainImage, col3);
 
             //Lines.
             mainImage->drawFastVLine(iVec2(160-1, 0), 60, lineColor);

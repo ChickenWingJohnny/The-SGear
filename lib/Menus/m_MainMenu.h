@@ -31,12 +31,12 @@ class m_MainMenu : public Menu {
             mainImage->blitScaledRotated(Item3.image, fVec2(Item3.size.x/2, Item3.size.y/2), fVec2(Item3.pos.x, Item3.pos.y), Item3Scale, Item3Rotation);
 
             //Menu Text
-            CreateImage::placeText(mainImage, Item1.topText, iVec2(Item1.pos.x, Item1.pos.y - 54), RGB565_White, font_Roboto_Bold_14, 1.0F);
-            CreateImage::placeText(mainImage, Item1.bottomText, iVec2(Item1.pos.x, Item1.pos.y + 54), RGB565_White, font_Roboto_Bold_14, 1.0F);
-            CreateImage::placeText(mainImage, Item2.topText, iVec2(Item2.pos.x, Item2.pos.y - 54), RGB565_White, font_Roboto_Bold_14, 1.0F);
-            CreateImage::placeText(mainImage, Item2.bottomText, iVec2(Item2.pos.x, Item2.pos.y + 54), RGB565_White, font_Roboto_Bold_14, 1.0F);
-            CreateImage::placeText(mainImage, Item3.topText, iVec2(Item3.pos.x, Item3.pos.y - 54), RGB565_White, font_Roboto_Bold_14, 1.0F);
-            CreateImage::placeText(mainImage, Item3.bottomText, iVec2(Item3.pos.x, Item3.pos.y + 54), RGB565_White, font_Roboto_Bold_14, 1.0F);
+            CreateImage::placeText(mainImage, Item1.topText, iVec2(Item1.pos.x, Item1.pos.y - 54), RGB565_White, font_Righteous_AA2_14, 1.0F);
+            CreateImage::placeText(mainImage, Item1.bottomText, iVec2(Item1.pos.x, Item1.pos.y + 54), RGB565_White, font_Righteous_AA2_14, 1.0F);
+            CreateImage::placeText(mainImage, Item2.topText, iVec2(Item2.pos.x, Item2.pos.y - 54), RGB565_White, font_Righteous_AA2_14, 1.0F);
+            CreateImage::placeText(mainImage, Item2.bottomText, iVec2(Item2.pos.x, Item2.pos.y + 54), RGB565_White, font_Righteous_AA2_14, 1.0F);
+            CreateImage::placeText(mainImage, Item3.topText, iVec2(Item3.pos.x, Item3.pos.y - 54), RGB565_White, font_Righteous_AA2_14, 1.0F);
+            CreateImage::placeText(mainImage, Item3.bottomText, iVec2(Item3.pos.x, Item3.pos.y + 54), RGB565_White, font_Righteous_AA2_14, 1.0F);
 
             //Title
             mainImage->blitScaledRotated(TextBox, fVec2(TextBox.width()/2, TextBox.height()/2), fVec2(160, 36), 1, 0);
@@ -46,8 +46,8 @@ class m_MainMenu : public Menu {
         const String Item1BottomText = "GENERATOR";
         const String Item2TopText = "VOLUME";
         const String Item2BottomText = "ENVELOPE";
-        const String Item3TopText = "VARIOUS";
-        const String Item3BottomText = "EFFECTS";
+        const String Item3TopText = "VIEW";
+        const String Item3BottomText = "WAVE";
 
         const int Item1PosX = 64;
         const int Item2PosX = 160;

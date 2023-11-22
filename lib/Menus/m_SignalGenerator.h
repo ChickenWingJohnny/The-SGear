@@ -75,7 +75,7 @@ class m_SignalGenerator : public Menu {
         void Draw(){
             mainImage->fillScreenVGradient(col3, RGB32_Black);
 
-            CreateImage::drawCylinderBackground(mainImage, col1);
+            CreateImage::drawCylinderBackground(mainImage, col3);
 
             //Menu Items
             mainImage->blitScaledRotated(Item1.image, fVec2(Item1.size.x/2, Item1.size.y/2), fVec2(Item1.pos.x, Item1.pos.y), Item1.scale, Item1.rot);
@@ -200,6 +200,7 @@ class m_SignalGenerator : public Menu {
                         TransitioningMenu = TransitionMenu1;
                     }
                     else if (TransitionButton == 0b010){
+                        //TODO: MAKE THIS A COOL TRANSITION :)
                         Serial.println("Button 2 Released... Activating Transition for Button 2");
                         TransitioningMenu = TransitionMenu2;
                         timeTransOUT = millis();
@@ -268,7 +269,7 @@ class m_SignalGenerator : public Menu {
                     } else if (timeElapsed < 500 && TransitionPart2) {
                         mainImage->fillScreenVGradient(col3, RGB32_Black);
 
-                        CreateImage::drawCylinderBackground(mainImage, col1);
+                        CreateImage::drawCylinderBackground(mainImage, col3);
 
                         int Osc0x = 60*(-timeElapsed/1000.0) + 130; //to 100 in 0.5 seconds
                         int Osc1x = 60*(timeElapsed/1000.0) + 190; //to 220 in 0.5 seconds

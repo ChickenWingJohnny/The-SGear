@@ -4,66 +4,103 @@
 #include <tgx.h>
 
 #include "CreateImage.h"
+#include "s_Synthesizer.h"
 
 #include "m_MenuItem.h"
 #include "m_Menu.h"
 
 using namespace tgx;
 
-class m_MainMenu : public Menu {
+#define FFT_RESOLUTION 21
+#define FFT_E 1.4142
+#define PEAK_RESOLUTION 64
+
+class m_ViewWave : public Menu
+{
     private:
 
         Image<RGB565>* mainImage;
+        s_Synthesizer* synth;
         uint16_t text_box[240 * 56];
         Image<RGB565> TextBox;
 
+        float fftValues[FFT_RESOLUTION]; //Not A Circular Array, used to average the values
+        float peakValues[PEAK_RESOLUTION]; //A Circular Array
+        int writeIndex = 0;
+
         //The Main Menu Loop Without Inputs
         void Draw(){
-            Item1.pos.y = 145 + (5 * sin(0.5 * PI * millis() / 1000.0));
-            Item2.pos.y = 145 + (5 * sin(0.25*PI + (0.5 * PI * millis() / 1000.0)));
-            Item3.pos.y = 145 + (5 * sin(0.5*PI + (0.5 * PI * millis() / 1000.0)));
-
             mainImage->fillScreenVGradient(RGB565_Black, col3);
+
+            //FFT Background
+            mainImage->fillRect(iVec2(30, 30), iVec2(250, 160), col1);
+            mainImage->fillRect(iVec2(32, 32), iVec2(250 - 4, 156), col2);
+
+            //Wave View
+            drawFFT();
+            // updatePeak();
+            // drawPeak();
 
             //Menu Items
             mainImage->blitScaledRotated(Item1.image, fVec2(Item1.size.x/2, Item1.size.y/2), fVec2(Item1.pos.x, Item1.pos.y), Item1Scale, Item1Rotation);
-            mainImage->blitScaledRotated(Item2.image, fVec2(Item2.size.x/2, Item2.size.y/2), fVec2(Item2.pos.x, Item2.pos.y), Item2Scale, Item2Rotation);
-            mainImage->blitScaledRotated(Item3.image, fVec2(Item3.size.x/2, Item3.size.y/2), fVec2(Item3.pos.x, Item3.pos.y), Item3Scale, Item3Rotation);
+            mainImage->blitScaledRotatedMasked(CreateImage::BackArrow, RGB565_Black, fVec2(CreateImage::BackArrow.width()/2, CreateImage::BackArrow.height()/2), fVec2(Item1PosX, Item1PosY), 1, 0, 1.0);
 
-            //Menu Text
-            CreateImage::placeText(mainImage, Item1.topText, iVec2(Item1.pos.x, Item1.pos.y - 54), RGB565_White, font_Righteous_AA2_14, 1.0F);
-            CreateImage::placeText(mainImage, Item1.bottomText, iVec2(Item1.pos.x, Item1.pos.y + 54), RGB565_White, font_Righteous_AA2_14, 1.0F);
-            CreateImage::placeText(mainImage, Item2.topText, iVec2(Item2.pos.x, Item2.pos.y - 54), RGB565_White, font_Righteous_AA2_14, 1.0F);
-            CreateImage::placeText(mainImage, Item2.bottomText, iVec2(Item2.pos.x, Item2.pos.y + 54), RGB565_White, font_Righteous_AA2_14, 1.0F);
-            CreateImage::placeText(mainImage, Item3.topText, iVec2(Item3.pos.x, Item3.pos.y - 54), RGB565_White, font_Righteous_AA2_14, 1.0F);
-            CreateImage::placeText(mainImage, Item3.bottomText, iVec2(Item3.pos.x, Item3.pos.y + 54), RGB565_White, font_Righteous_AA2_14, 1.0F);
 
-            //Title
-            mainImage->blitScaledRotated(TextBox, fVec2(TextBox.width()/2, TextBox.height()/2), fVec2(160, 36), 1, 0);
+            //Title240
+            //mainImage->blitScaledRotated(TextBox, fVec2(TextBox.width()/2, TextBox.height()/2), fVec2(160, 36), 1, 0);
         }
 
-        const String Item1TopText = "SIGNAL";
-        const String Item1BottomText = "GENERATOR";
-        const String Item2TopText = "VOLUME";
-        const String Item2BottomText = "ENVELOPE";
-        const String Item3TopText = "VIEW";
-        const String Item3BottomText = "WAVE";
+        void drawFFT(){
+            //Draw FFT
+            //https://forum.pjrc.com/index.php?threads/is-there-a-logarithmic-function-for-fft-bin-selection-for-any-given-of-bands.32677/
+            RGB32 color;
+            bool available = synth->getFFTAvailable();
+            for(int i = 0; i < FFT_RESOLUTION - 1; i++){
 
-        const int Item1PosX = 64;
-        const int Item2PosX = 160;
-        const int Item3PosX = 256;
+                //draw the frame
 
-        const int Item1Scale = 4;
-        const int Item2Scale = 4;
-        const int Item3Scale = 4;
+                //Using i, make color a rainbow
+                color = RGB32(0, 0, 0);
+                if(i < FFT_RESOLUTION/3) // i = 0 to 6
+                    color = RGB32(255*cos(i/6.0 * PI/2), 255*sin(i/6.0 * PI/2),0);
+                else if(i < 2*FFT_RESOLUTION/3) // i = 7 to 13
+                    color = RGB32(0, 255*cos((i-7)/6.0 * PI/2), 255*sin((i-7)/6.0 * PI/2));
+                else if(i < FFT_RESOLUTION) // i = 14 to 20
+                    color = RGB32(255*sin((i-14)/6.0 * PI/2), 0, 255*cos((i-14)/6.0 * PI/2));
+
+                //Draw the bars
+                float height = available ? 3200*min(synth->getFFT(i*FFT_E, (i+1)*FFT_E), 0.035) : 0;
+                //average it with the existing value
+                fftValues[i] = (fftValues[i] + height) / 2;
+                mainImage->fillRect(iVec2(i * 210 / FFT_RESOLUTION + 45 + i, 169 - fftValues[i]), iVec2(210 / FFT_RESOLUTION, fftValues[i] + 1), color);
+            }
+        }
+        void updatePeak(){
+            //Update the circular array
+            peakValues[writeIndex % PEAK_RESOLUTION] = synth->getPeak();
+            writeIndex++;
+        }
+        void drawPeak(){
+            //similar to draw FFT, draw lines interpolating each peak from one point of the array, to the next
+            int x = 0;
+            for(int i = writeIndex - PEAK_RESOLUTION; i < writeIndex + PEAK_RESOLUTION - 1; i++){
+                float P1 = peakValues[i % PEAK_RESOLUTION];
+                float P2 = peakValues[(i + 1) % PEAK_RESOLUTION];
+                mainImage->drawLine(x * (240.0/PEAK_RESOLUTION), 159 - 800*P1, (x + 1) * (240.0/PEAK_RESOLUTION), 159 - 800*P2, col1);
+                mainImage->drawLine(x * (240.0/PEAK_RESOLUTION), 160 - 800*P1, (x + 1) * (240.0/PEAK_RESOLUTION), 160 - 800*P2, col1);
+                mainImage->drawLine(x * (240.0/PEAK_RESOLUTION), 161 - 800*P1, (x + 1) * (240.0/PEAK_RESOLUTION), 161 - 800*P2, col1);
+                x++;
+            }
+        }
+
+        const int Item1PosX = 40;
+        const int Item1PosY = 200;
+
+        const int Item1Scale = 2;
 
         const int Item1Rotation = 45;
-        const int Item2Rotation = 45;
-        const int Item3Rotation = 45;
 
         MenuItem Item1 = {};
-        MenuItem Item2 = {};
-        MenuItem Item3 = {};
 
         const RGB32 col1 = RGB32(0, 0, 255);
         const RGB32 col2 = RGB32(0, 2, 20);
@@ -86,40 +123,22 @@ class m_MainMenu : public Menu {
         Menu* TransitioningMenu;
 
     public:
-        m_MainMenu(Image<RGB565>* mI){
+        m_ViewWave(Image<RGB565>* mI, s_Synthesizer* s){
             mainImage = mI;
+            synth = s;
             TextBox = Image<RGB565>(text_box, 240, 56);
 
             Item1.image = CreateImage::Item;
-            Item2.image = CreateImage::Item;
-            Item3.image = CreateImage::Item;
-
-            Item1.topText = Item1TopText;
-            Item1.bottomText = Item1BottomText;
-            Item2.topText = Item2TopText;
-            Item2.bottomText = Item2BottomText;
-            Item3.topText = Item3TopText;
-            Item3.bottomText = Item3BottomText;
 
             Item1.size.x = Item1.image.width();
-            Item2.size.x = Item2.image.width();
-            Item3.size.x = Item3.image.width();
             Item1.size.y = Item1.image.height();
-            Item2.size.y = Item2.image.height();
-            Item3.size.y = Item3.image.height();
 
             Item1.pos.x = Item1PosX;
-            Item2.pos.x = Item2PosX;
-            Item3.pos.x = Item3PosX;
-            //Pos Y is not constant.
+            Item1.pos.y = Item1PosY;
 
             Item1.scale = Item1Scale;
-            Item2.scale = Item2Scale;
-            Item3.scale = Item3Scale;
 
             Item1.rot = Item1Rotation;
-            Item2.rot = Item2Rotation;
-            Item3.rot = Item3Rotation;
         }
         void Link(Menu* Tm1, Menu* Tm2, Menu* Tm3){
             TransitionMenu1 = Tm1;
@@ -135,7 +154,8 @@ class m_MainMenu : public Menu {
 
             CreateImage::updateRectMenuItem(col1, col2);
             CreateImage::updateAltRectMenuItem(col2, col1);
-            CreateImage::createTextBox(&TextBox, "MAIN MENU", 4, col2, col1, RGB565_White, font_Righteous_AA2_32);
+            CreateImage::updateBackArrow(col1);
+            //CreateImage::createTextBox(&TextBox, "VIEW WAVE", 4, col2, col1, RGB565_White, font_Righteous_AA2_32);
         }
         void Setup(RGB565 TransitionINColor){
             Serial.println("Setup m_MainMenu");
@@ -145,7 +165,8 @@ class m_MainMenu : public Menu {
 
             CreateImage::updateRectMenuItem(col1, col2);
             CreateImage::updateAltRectMenuItem(col2, col1);
-            CreateImage::createTextBox(&TextBox, "MAIN MENU", 4, col2, col1, RGB565_White, font_Righteous_AA2_32);
+            CreateImage::updateBackArrow(col1);
+            //CreateImage::createTextBox(&TextBox, "VIEW WAVE", 4, col2, col1, RGB565_White, font_Righteous_AA2_32);
         }
 
         //Transition IN should ONLY be Drawn if transitionINFlag is True.
@@ -166,9 +187,14 @@ class m_MainMenu : public Menu {
                     bool B1IsJustReleased, bool B2IsJustReleased, bool B3IsJustReleased,
                     int Dial1, int Dial2, int Dial3
         ){
-            B1Pressed ? Item1.image = CreateImage::AltItem : Item1.image = CreateImage::Item;
-            B2Pressed ? Item2.image = CreateImage::AltItem : Item2.image = CreateImage::Item;
-            B3Pressed ? Item3.image = CreateImage::AltItem : Item3.image = CreateImage::Item;
+            if(B1Pressed){
+                Item1.image = CreateImage::AltItem;
+                CreateImage::updateBackArrow(col2);
+            }
+            else{
+                Item1.image = CreateImage::Item;
+                CreateImage::updateBackArrow(col1);
+            }
             
             Draw();
 
@@ -212,13 +238,7 @@ class m_MainMenu : public Menu {
                     mainImage->blitScaledRotated(CreateImage::TransitionOut, fVec2(CreateImage::TransitionOut.width()/2, CreateImage::TransitionOut.height()/2), fVec2(Item1.pos.x, Item1.pos.y), TransitionScale, 45);
                     TransitionScale *= TRANSITION_RATE;
                 } else if (TransitionButton >> 1) {
-                    Draw();
-                    mainImage->blitScaledRotated(CreateImage::TransitionOut, fVec2(CreateImage::TransitionOut.width()/2, CreateImage::TransitionOut.height()/2), fVec2(Item2.pos.x, Item2.pos.y), TransitionScale, 45);
-                    TransitionScale *= TRANSITION_RATE;
                 } else if (TransitionButton) {
-                    Draw();
-                    mainImage->blitScaledRotated(CreateImage::TransitionOut, fVec2(CreateImage::TransitionOut.width()/2, CreateImage::TransitionOut.height()/2), fVec2(Item3.pos.x, Item3.pos.y), TransitionScale, 45);
-                    TransitionScale *= TRANSITION_RATE;
                 }
             }
         }

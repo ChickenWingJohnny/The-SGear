@@ -85,6 +85,12 @@ class s_Synthesizer {
 
         //Audio Output
         AudioOutputI2S i2s;           //xy=1220.2222061157227,228.00001335144043
+        AudioControlSGTL5000 sgtl5000;  
+
+        //Audio Analysis
+        AudioAnalyzeFFT1024 FFT1024;
+        AudioAnalyzePeak PEAK;
+
 
         //Create Patch Cords connecting each of the notes in the array to its own mixer and adsr.
         //There should be a more efficent way of doing this...
@@ -146,9 +152,10 @@ class s_Synthesizer {
         AudioConnection patchCord64 = AudioConnection(HIGH_PASS_FILTER, 2, LOW_PASS_FILTER, 0);
         AudioConnection patchCord65 = AudioConnection(LOW_PASS_FILTER, 0, i2s, 0);
         AudioConnection patchCord66 = AudioConnection(LOW_PASS_FILTER, 0, i2s, 1);
+
+        AudioConnection patchCord67 = AudioConnection(LOW_PASS_FILTER, FFT1024);
+        AudioConnection patchCord68 = AudioConnection(LOW_PASS_FILTER, PEAK);
  
-        AudioControlSGTL5000 sgtl5000;  
-        // GUItool: end automatically generated code
 
     public:
         //Representatives of the main oscilators.
@@ -280,14 +287,14 @@ class s_Synthesizer {
         }
         void updateLowPassFilterFrequency(float freq){
             freq = max(freq, 2.0f); //we don't want the frequency to be 0.
-            LOW_PASS_FILTER.frequency(10000 * freq / 127);
+            LOW_PASS_FILTER.frequency(10000 * (freq / 127)*(freq / 127));
         }
         void updateLowPassFilterResonance(float Q){
             LOW_PASS_FILTER.resonance((4.3 * Q / 127) + 0.7);
         }
         void updateHighPassFilterFrequency(float freq){
             freq = max(freq, 2.0f); //we don't want the frequency to be 0.
-            HIGH_PASS_FILTER.frequency(10000 * (1 - (freq / 127)) );
+            HIGH_PASS_FILTER.frequency(10000 * (1 - (freq / 127)*(freq / 127)) );
         }
         void updateHighPassFilterResonance(float Q){
             HIGH_PASS_FILTER.resonance((4.3 * Q / 127) + 0.7);
@@ -300,6 +307,20 @@ class s_Synthesizer {
         }
         float getBend(){
             return ( (float) bend / 0x1FFF );
+        }
+
+        float getFFT(int bin1, int bin2){
+            Serial.println(FFT1024.read(bin1, bin2));
+            return FFT1024.read(bin1, bin2);
+        }
+        bool getFFTAvailable(){
+            return FFT1024.available();
+        }
+        float getPeak(){
+            if(PEAK.available())
+                return PEAK.read();
+            else
+                return 0.0f;
         }
 
         void AddNote(byte pitch){

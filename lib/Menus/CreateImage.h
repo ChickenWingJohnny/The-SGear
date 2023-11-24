@@ -5,9 +5,13 @@
 
 using namespace tgx;
 
-#define BG_CYLINDER_RADIUS 5
-#define BG_CYLINDER_BANDS 4
-#define BG_CYLINDER_MOD 60
+#define BG_CYLINDER_VERT_RADIUS 5
+#define BG_CYLINDER_VERT_BANDS 4
+#define BG_CYLINDER_VERT_MOD 60
+
+#define BG_CYLINDER_HORZ_RADIUS 5
+#define BG_CYLINDER_HORZ_BANDS 4
+#define BG_CYLINDER_HORZ_MOD 80
 
 //Stores common shapes that can be used across menus.
 namespace CreateImage {
@@ -121,15 +125,27 @@ namespace CreateImage {
             placeText(im, text, iVec2(im->lx()/2, im->ly()/2), textColor, font, 1.0);
         }
 
-        static void drawCylinderBackground(Image<RGB565>* im, RGB565 color){
+        static void drawCylinderBackgroundVertical(Image<RGB565>* im, RGB565 color){
             int timeCalled = millis();
-            for (int i = -BG_CYLINDER_BANDS/2; i <= BG_CYLINDER_BANDS*2; i++)
+            for (int i = -BG_CYLINDER_VERT_BANDS/2; i <= BG_CYLINDER_VERT_BANDS*2; i++)
             {
-                int y = (i * 240)/BG_CYLINDER_BANDS - (timeCalled/20) % BG_CYLINDER_MOD;
+                int y = (i * 240)/BG_CYLINDER_VERT_BANDS - (timeCalled/20) % BG_CYLINDER_VERT_MOD;
 
-                im->drawQuadBezier(iVec2(0,y), iVec2(320, y), iVec2(160,119), 1.0, true, color);
-                im->drawQuadBezier(iVec2(0,y), iVec2(320, y), iVec2(160,120), 1.0, true, color);
-                im->drawQuadBezier(iVec2(0,y), iVec2(320, y), iVec2(160,121), 1.0, true, color);
+                im->drawQuadBezier(iVec2(0, y-1), iVec2(320, y-1), iVec2(160,119), 1.0, true, color);
+                im->drawQuadBezier(iVec2(0, y), iVec2(320, y), iVec2(160,120), 1.0, true, color);
+                im->drawQuadBezier(iVec2(0, y+1), iVec2(320, y+1), iVec2(160,121), 1.0, true, color);
+            }
+        }
+
+        static void drawCylinderBackgroundHorizontal(Image<RGB565>* im, RGB565 color){
+            int timeCalled = millis();
+            for (int i = -BG_CYLINDER_HORZ_BANDS/2; i <= BG_CYLINDER_HORZ_BANDS*2; i++)
+            {
+                int x = (i * 320)/BG_CYLINDER_HORZ_BANDS + (timeCalled/20) % BG_CYLINDER_HORZ_MOD;
+
+                im->drawQuadBezier(iVec2(x-1,0), iVec2(x-1, 240), iVec2(159,120), 1.0, true, color);
+                im->drawQuadBezier(iVec2(x,0), iVec2(x, 240), iVec2(160,120), 1.0, true, color);
+                im->drawQuadBezier(iVec2(x+1,0), iVec2(x+1, 240), iVec2(161,120), 1.0, true, color);
             }
         }
 

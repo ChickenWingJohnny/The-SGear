@@ -243,7 +243,7 @@ class m_OscilatorTemplate : public Menu {
             }
 
             if(TransitionButton == 0 && TransitioningMenu == nullptr) {
-                TransitionButton = B1IsJustReleased << 2; //| B3IsJustReleased;
+                TransitionButton = B1IsJustReleased << 2;
                 if(TransitionButton != 0) {
                     transitionOUTFlag = true;
                     //Serial.println(TransitionButton);
@@ -251,10 +251,6 @@ class m_OscilatorTemplate : public Menu {
                         Serial.println("Button 1 Released... Activating Transition for Button 1");
                         TransitioningMenu = TransitionMenu1;
                     }
-                    // else if (TransitionButton == 0b001){
-                    //     Serial.println("Button 3 Released... Activating Transition for Button 3");
-                    //     TransitioningMenu = TransitionMenu3;
-                    // }     
                 }
             }
         }

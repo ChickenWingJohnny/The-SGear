@@ -11,12 +11,11 @@
 
 using namespace tgx;
 
-#define FFT_RESOLUTION 21
-#define FFT_E 1.4142
-#define FFT_ARRAY_SIZE 5
-#define PEAK_RESOLUTION 64
+#define drawADSR_StartX 22
+#define drawADSR_StartY 75
+#define drawADSR_EndY 175
 
-class m_ViewWave : public Menu
+class m_VolumeEnvelope : public Menu
 {
     private:
 
@@ -25,103 +24,107 @@ class m_ViewWave : public Menu
         uint16_t text_box[240 * 56];
         Image<RGB565> TextBox;
 
-        float fftValues[FFT_RESOLUTION][FFT_ARRAY_SIZE]; //Not A Circular Array, used to average the values
-        float peakValues[PEAK_RESOLUTION]; //A Circular Array
-        int writeIndex = 0;
-
         //The Main Menu Loop Without Inputs
         void Draw(){
             mainImage->fillScreen(RGB32_Black);
-
-            //FFT Background
-            mainImage->fillRect(iVec2(10, 45), iVec2(300, 180), col1);
-            mainImage->fillRect(iVec2(12, 47), iVec2(300 - 4, 180-4), col2);
-
-            //Wave View
-            drawFFT();
-            CreateImage::placeText(mainImage, "43 107 194 302 431 582 1k 1.3k 1.7k 2.2k 2.8k 3.6k 4.5k 7.3k 9.3k 12k 15k 18k 21k", iVec2(160, 215), RGB32_White, font_Righteous_AA2_8, 1.0f);
-
-
-            // updatePeak();
-            // drawPeak();
-
             
-            //Title
-            mainImage->blitScaledRotated(TextBox, fVec2(TextBox.width()/2, TextBox.height()/2), fVec2(160, 36), 1, 0);
+            CreateImage::drawCylinderBackgroundHorizontal(mainImage, col3);
 
             //Menu Items
             mainImage->blitScaledRotated(Item1.image, fVec2(Item1.size.x/2, Item1.size.y/2), fVec2(Item1.pos.x, Item1.pos.y), Item1Scale, Item1Rotation);
             mainImage->blitScaledRotatedMasked(CreateImage::BackArrow, RGB565_Black, fVec2(CreateImage::BackArrow.width()/2, CreateImage::BackArrow.height()/2), fVec2(Item1PosX, Item1PosY), 1, 0, 1.0);
+            mainImage->blitScaledRotated(Item2.image, fVec2(Item2.size.x/2, Item2.size.y/2), fVec2(Item2.pos.x, Item2.pos.y), Item2Scale, Item2Rotation);
             mainImage->blitScaledRotated(Item3.image, fVec2(Item3.size.x/2, Item3.size.y/2), fVec2(Item3.pos.x, Item3.pos.y), Item3Scale, Item3Rotation);
+
+            //Dials
+            mainImage->blitScaledRotatedMasked(CreateImage::Dial, RGB565_Black, fVec2(CreateImage::Dial.lx()/2.0, CreateImage::Dial.ly()/2.0), fVec2(Dial1PosX, Dial1PosY), Dial1Scale, Dial1Rotation, 1.0);
+            mainImage->blitScaledRotatedMasked(CreateImage::Dial, RGB565_Black, fVec2(CreateImage::Dial.lx()/2.0, CreateImage::Dial.ly()/2.0), fVec2(Dial2PosX, Dial2PosY), Dial2Scale, Dial2Rotation, 1.0);
+            mainImage->blitScaledRotatedMasked(CreateImage::Dial, RGB565_Black, fVec2(CreateImage::Dial.lx()/2.0, CreateImage::Dial.ly()/2.0), fVec2(Dial3PosX, Dial3PosY), Dial3Scale, Dial3Rotation, 1.0);
+
+            //ADSR and Background
+            mainImage->fillRect(drawADSR_StartX, drawADSR_StartY, 320-(drawADSR_StartX*2), drawADSR_EndY-drawADSR_StartY, col1);
+            mainImage->fillRect(drawADSR_StartX+2, drawADSR_StartY+2, 320-(drawADSR_StartX*2)-4, drawADSR_EndY-drawADSR_StartY-4, col2);
+
+            drawADSR();
+
+            //Text
+            CreateImage::placeText(mainImage, "A", iVec2(Dial1PosX, Dial1PosY), RGB565_White, font_Righteous_AA2_16, 1.0);
+            CreateImage::placeText(mainImage, Dial2Text, iVec2(Dial2PosX, Dial2PosY), RGB565_White, font_Righteous_AA2_16, 1.0);
+            CreateImage::placeText(mainImage, "R", iVec2(Dial3PosX, Dial3PosY), RGB565_White, font_Righteous_AA2_16, 1.0);
+
+            CreateImage::placeText(mainImage, "Attack: " + String(AttackValue), iVec2(Dial1PosX+10, Dial1PosY-30), RGB565_White, font_Righteous_AA2_12, 1.0);
+            if(!Dial2Sustain){
+                CreateImage::placeText(mainImage, "Decay: " + String(DecayValue), iVec2(Dial2PosX, Dial2PosY-30), RGB565_White, font_Righteous_AA2_12, 1.0);
+            }
+            else{
+                CreateImage::placeText(mainImage, "Sustain: " + String(SustainValue), iVec2(Dial2PosX, Dial2PosY-30), RGB565_White, font_Righteous_AA2_12, 1.0);
+            }
+            CreateImage::placeText(mainImage, "Release: " + String(ReleaseValue), iVec2(Dial3PosX-10, Dial3PosY-30), RGB565_White, font_Righteous_AA2_12, 1.0);
+
+            //Title
+            mainImage->blitScaledRotated(TextBox, fVec2(TextBox.width()/2, TextBox.height()/2), fVec2(160, 36), 1, 0);
         }
 
-        void drawFFT(){
-            //Draw FFT
-            //https://forum.pjrc.com/index.php?threads/is-there-a-logarithmic-function-for-fft-bin-selection-for-any-given-of-bands.32677/
-            RGB32 color;
-            bool available = synth->getFFTAvailable();
-            for(int i = 0; i < FFT_RESOLUTION - 1; i++){
-                //Rainbow will vary by I, RAINBOW!!!
-                color = RGB32(0, 0, 0);
-                if(i < FFT_RESOLUTION/3) // i = 0 to 6
-                    color = RGB32(255*cos(i/6.0 * PI/2), 255*sin(i/6.0 * PI/2),0);
-                else if(i < 2*FFT_RESOLUTION/3) // i = 7 to 13
-                    color = RGB32(0, 255*cos((i-7)/6.0 * PI/2), 255*sin((i-7)/6.0 * PI/2));
-                else if(i < FFT_RESOLUTION) // i = 14 to 20
-                    color = RGB32(255*sin((i-14)/6.0 * PI/2), 0, 255*cos((i-14)/6.0 * PI/2));
+        void drawADSR(){
+            //Draw Attack
+            float EndAttackPosX = (drawADSR_StartX*2)+(65*AttackValue/250.0);
+            float EndDecayPosX = (drawADSR_StartX*2)+EndAttackPosX+(65*DecayValue/250.0);
+            float SustainPosY = drawADSR_EndY+(-100*SustainValue);
+            float EndReleasePosX = 320-(drawADSR_StartX*2);
+            float StartReleasePosX = EndReleasePosX-(65*ReleaseValue/250.0);
 
-                
-                float height = available ? min(3200*synth->getFFT(i*FFT_E, (i+1)*FFT_E), 75) : 0;
-                fftValues[i][writeIndex % FFT_ARRAY_SIZE] = height;
-                //Find the max value in the array (Helps with the jittering)
-                float max = 0;
-                for(int j = 0; j < FFT_ARRAY_SIZE; j++){
-                    if(fftValues[i][j] > max)
-                        max = fftValues[i][j];
-                }
-                
-                //Draw the Bar!
-                mainImage->fillRect(iVec2(i * 273 / FFT_RESOLUTION + 20 + i, round(204 - 32*log(max > 1 ? max : 1))), 
-                                    iVec2(273 / FFT_RESOLUTION, round(32*log(max > 1 ? max : 1) + 5)), 
-                                    color
-                );
-            }
-            writeIndex++;
-        }
-        void updatePeak(){
-            //Update the circular array
-            peakValues[writeIndex % PEAK_RESOLUTION] = synth->getPeak();
-            writeIndex++;
-        }
-        void drawPeak(){
-            //similar to draw FFT, draw lines interpolating each peak from one point of the array, to the next
-            int x = 0;
-            for(int i = writeIndex - PEAK_RESOLUTION; i < writeIndex + PEAK_RESOLUTION - 1; i++){
-                float P1 = peakValues[i % PEAK_RESOLUTION];
-                float P2 = peakValues[(i + 1) % PEAK_RESOLUTION];
-                mainImage->drawLine(x * (240.0/PEAK_RESOLUTION), 159 - 800*P1, (x + 1) * (240.0/PEAK_RESOLUTION), 159 - 800*P2, col1);
-                mainImage->drawLine(x * (240.0/PEAK_RESOLUTION), 160 - 800*P1, (x + 1) * (240.0/PEAK_RESOLUTION), 160 - 800*P2, col1);
-                mainImage->drawLine(x * (240.0/PEAK_RESOLUTION), 161 - 800*P1, (x + 1) * (240.0/PEAK_RESOLUTION), 161 - 800*P2, col1);
-                x++;
-            }
+            mainImage->fillTriangle(iVec2(drawADSR_StartX*2, drawADSR_EndY-2), iVec2(EndAttackPosX, drawADSR_EndY-2), iVec2(EndAttackPosX, drawADSR_StartY), col1, col1);
+            mainImage->fillTriangle(iVec2(EndAttackPosX, drawADSR_StartY), iVec2(EndAttackPosX, SustainPosY), iVec2(EndDecayPosX, SustainPosY), col1, col1);
+            mainImage->fillRect(iVec2(EndAttackPosX,SustainPosY), iVec2(EndDecayPosX-EndAttackPosX, drawADSR_EndY-SustainPosY), col1);
+            mainImage->fillRect(iVec2(EndDecayPosX-1,SustainPosY), iVec2(StartReleasePosX-EndDecayPosX+2, drawADSR_EndY-SustainPosY), col1);
+            mainImage->fillTriangle(iVec2(StartReleasePosX, SustainPosY), iVec2(StartReleasePosX, drawADSR_EndY-2), iVec2(EndReleasePosX, drawADSR_EndY-2), col1, col1);
         }
 
         const int Item1PosX = 22;
-        const int Item1PosY = 46;
+        const int Item1PosY = 36;
         const int Item1Scale = 2;
         const int Item1Rotation = 45;
 
+        const int Item2PosX = 200;
+        const int Item2PosY = 200;
+        const int Item2Scale = 1;
+        const int Item2Rotation = 45;
+
         const int Item3PosX = 298;
-        const int Item3PosY = 46;
+        const int Item3PosY = 36;
         const int Item3Scale = 2;
         const int Item3Rotation = 45;
 
+        int Dial1PosX = 30;
+        int Dial1PosY = 210;
+        float Dial1Scale = 1.25;
+        float Dial1Rotation = 0;
+
+        int Dial2PosX = 160;
+        int Dial2PosY = 210;
+        float Dial2Scale = 1.25;
+        float Dial2Rotation = 0;
+        bool Dial2Sustain = false;
+        String Dial2Text = "D";
+
+        int Dial3PosX = 290;
+        int Dial3PosY = 210;
+        float Dial3Scale = 1.25;
+        float Dial3Rotation = 0;
+
+        int AttackValue; //0.0-250.0
+        int DecayValue; //0.0-250.0
+        float SustainValue; //0.0-1.0
+        int ReleaseValue; //0.0-250.0
+
+
         MenuItem Item1 = {};
+        MenuItem Item2 = {};
         MenuItem Item3 = {};
 
-        const RGB32 col1 = RGB32(0, 0, 255);
-        const RGB32 col2 = RGB32(0, 2, 20);
-        const RGB32 col3 = RGB32(0, 7, 70);
+        const RGB32 col1 = RGB32(255, 0, 0);
+        const RGB32 col2 = RGB32(20, 0, 2);
+        const RGB32 col3 = RGB32(70, 0, 7);
 
         bool transitionINFlag = true;
         bool transitionOUTFlag = false;
@@ -140,7 +143,7 @@ class m_ViewWave : public Menu
         Menu* TransitioningMenu;
 
     public:
-        m_ViewWave(Image<RGB565>* mI, s_Synthesizer* s){
+        m_VolumeEnvelope(Image<RGB565>* mI, s_Synthesizer* s){
             mainImage = mI;
             synth = s;
             TextBox = Image<RGB565>(text_box, 240, 56);
@@ -152,6 +155,14 @@ class m_ViewWave : public Menu
             Item1.pos.y = Item1PosY;
             Item1.scale = Item1Scale;
             Item1.rot = Item1Rotation;
+
+            Item2.image = CreateImage::Item;
+            Item2.size.x = Item2.image.width();
+            Item2.size.y = Item2.image.height();
+            Item2.pos.x = Item2PosX;
+            Item2.pos.y = Item2PosY;
+            Item2.scale = Item2Scale;
+            Item2.rot = Item2Rotation;
 
             Item3.image = CreateImage::Item;
             Item3.size.x = Item3.image.width();
@@ -168,7 +179,7 @@ class m_ViewWave : public Menu
         }
 
         void Setup(){
-            Serial.println("Setup m_ViewWave");
+            Serial.println("Setup m_VolumeEnvelope");
 
             CreateImage::updateTransitionIn(col1);
             CreateImage::updateTransitionOut(TransitionColor());
@@ -176,10 +187,11 @@ class m_ViewWave : public Menu
             CreateImage::updateRectMenuItem(col1, col2);
             CreateImage::updateAltRectMenuItem(col2, col1);
             CreateImage::updateBackArrow(col1);
-            CreateImage::createTextBox(&TextBox, "VIEW WAVE", 4, col2, col1, RGB565_White, font_Righteous_AA2_32);
+            CreateImage::updateDialMenuItem(col1, col2);
+            CreateImage::createTextBox(&TextBox, "VOLUME ENVELOPE", 4, col2, col1, RGB565_White, font_Righteous_AA2_24);
         }
         void Setup(RGB565 TransitionINColor){
-            Serial.println("Setup m_ViewWave");
+            Serial.println("Setup m_VolumeEnvelope");
 
             CreateImage::updateTransitionIn(TransitionINColor);
             CreateImage::updateTransitionOut(TransitionColor());
@@ -187,7 +199,8 @@ class m_ViewWave : public Menu
             CreateImage::updateRectMenuItem(col1, col2);
             CreateImage::updateAltRectMenuItem(col2, col1);
             CreateImage::updateBackArrow(col1);
-            CreateImage::createTextBox(&TextBox, "VIEW WAVE", 4, col2, col1, RGB565_White, font_Righteous_AA2_32);
+            CreateImage::updateDialMenuItem(col1, col2);
+            CreateImage::createTextBox(&TextBox, "VOLUME ENVELOPE", 4, col2, col1, RGB565_White, font_Righteous_AA2_24);
         }
 
         //Transition IN should ONLY be Drawn if transitionINFlag is True.
@@ -208,6 +221,10 @@ class m_ViewWave : public Menu
                     bool B1IsJustReleased, bool B2IsJustReleased, bool B3IsJustReleased,
                     int Dial1, int Dial2, int Dial3
         ){
+            Dial1Rotation = 300*(Dial1/1024.0)-210;
+            Dial2Rotation = 300*(Dial2/1024.0)-210;
+            Dial3Rotation = 300*(Dial3/1024.0)-210;
+            
             if(B1Pressed){
                 Item1.image = CreateImage::AltItem;
                 CreateImage::updateBackArrow(col2);
@@ -216,7 +233,21 @@ class m_ViewWave : public Menu
                 Item1.image = CreateImage::Item;
                 CreateImage::updateBackArrow(col1);
             }
-
+            if(B2Pressed){
+                Item2.image = CreateImage::AltItem;
+            }
+            else{
+                Item2.image = CreateImage::Item;
+            }
+            if(B2IsJustReleased){
+                if(Dial2Sustain){
+                    Dial2Text = "D";
+                }
+                else{
+                    Dial2Text = "S";
+                }
+                Dial2Sustain = !Dial2Sustain;
+            }
             if(B3Pressed){
                 Item3.image = CreateImage::AltItem;
             }
@@ -224,6 +255,19 @@ class m_ViewWave : public Menu
                 Item3.image = CreateImage::Item;
             }
             
+            AttackValue = 250 + 250*(Dial1/1024.0);
+            if(!Dial2Sustain){
+                DecayValue = 250 + 250*(Dial2/1024.0);
+                SustainValue = synth->sustain;
+            }
+            else{
+                DecayValue = synth->decay;
+                SustainValue = 1 + (Dial2/1024.0);
+            }
+            ReleaseValue = 250 + 250*(Dial3/1024.0);
+
+            synth->updateADSR(AttackValue, DecayValue, SustainValue, ReleaseValue);
+
             Draw();
 
             //Bitshifted bools to make it easier :)
@@ -236,7 +280,7 @@ class m_ViewWave : public Menu
                         TransitioningMenu = TransitionMenu1;
                         transitionOUTFlag = true;
                     }
-                    //No other transitions... unless we want to add one for the peak...
+                    //No other transitions needed :)
                 }
             }
         }

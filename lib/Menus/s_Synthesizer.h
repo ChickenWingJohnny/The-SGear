@@ -274,10 +274,14 @@ class s_Synthesizer {
                     break;
             }
         }
-        void updateADSR(int attack, int decay, double sustain, int release){
+        void updateADSR(int a, int d, double s, int r){
+            attack = a;
+            decay = d;
+            sustain = s;
+            release = r;
             for (int i = 0; i < MAX_NOTE_BUFFER; i++)
             {
-                notes[i].adjustADSR(attack, decay, sustain, release);
+                notes[i].adjustADSR(a, d, s, r);
             }
         }
         void updateLevel(double level0, double level1){
@@ -308,6 +312,8 @@ class s_Synthesizer {
         float getBend(){
             return ( (float) bend / 0x1FFF );
         }
+
+
 
         float getFFT(int bin1, int bin2){
             Serial.println(FFT1024.read(bin1, bin2));

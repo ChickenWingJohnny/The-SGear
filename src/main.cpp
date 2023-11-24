@@ -11,6 +11,7 @@
 
 #include <m_MainMenu.h>
 #include <m_SignalGenerator.h>
+#include "m_VolumeEnvelope.h"
 #include <m_ViewWave.h>
 #include <m_Oscilators.h>
 #include <m_OscilatorTemplate.h>
@@ -74,6 +75,7 @@ s_Synthesizer Synth;
 
 m_MainMenu MainMenu(&im);
 m_SignalGenerator SignalGenerator(&im);
+m_VolumeEnvelope VolumeEnvelope(&im, &Synth);
 m_ViewWave ViewWave(&im, &Synth);
 m_Oscilators Oscilators(&im, &Synth);
 m_OscilatorTemplate Oscilator0(&im, &Synth, 0);
@@ -110,8 +112,9 @@ void setup() {
   Serial.println("Beginning Setup.");
 
   Serial.println("Linking Menus...");
-  MainMenu.Link(&SignalGenerator, &MainMenu, &ViewWave);
+  MainMenu.Link(&SignalGenerator, &VolumeEnvelope, &ViewWave);
   SignalGenerator.Link(&MainMenu, &Oscilators, &SignalGenerator);
+  VolumeEnvelope.Link(&MainMenu, nullptr, nullptr);
   Oscilators.Link(&Oscilator0, &SignalGenerator, &Oscilator1);
   Oscilator0.Link(&Oscilators, nullptr, nullptr);
   Oscilator1.Link(&Oscilators, nullptr, nullptr);
